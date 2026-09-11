@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>學生 RPG 冒險者養成系統 v12.0 (寵物系統跟隨整合版)</title>
+    <title>學生 RPG 冒險者養成系統 v12.0 (雲端連動版)</title>
     <style>
         :root {
             --bg-main: #12141d;
@@ -125,19 +125,19 @@
     <div class="top-bar">
         <div class="character-tabs" id="characterTabs"></div>
         <div class="admin-controls">
-            <button class="btn-boss" id="toggleBossViewBtn" onclick="toggleBossArena()">👹 魔王挑戰</button>
-            <button class="btn-pk" id="togglePkViewBtn" onclick="togglePKArena()">⚔️ 角色 PK</button>
+            <button class="btn-boss" id="toggleBossViewBtn">👹 魔王挑戰</button>
+            <button class="btn-pk" id="togglePkViewBtn">⚔️ 角色 PK</button>
             <span id="lockTimerDisplay" class="lock-timer" style="display:none;">⏳ 20s</span>
-            <button class="btn-success" id="addCharBtn" disabled onclick="createNewCharacterPrompt()">+ 新增角色</button>
-            <button class="btn-accent" id="adminAuthBtn" onclick="toggleAdminAuth()">🔒 導師解鎖</button>
+            <button class="btn-success" id="addCharBtn" disabled>+ 新增角色</button>
+            <button class="btn-accent" id="adminAuthBtn">🔒 導師解鎖</button>
 
-            <button class="btn-primary" id="exportDataBtn" style="display:none;" onclick="exportDataJSON()">📤 匯出數據</button>
-            <button class="btn-primary" id="importDataBtn" style="display:none;" onclick="triggerImportFileInput()">📥 匯入數據</button>
-            <input type="file" id="importFileInput" accept=".json,.txt" style="display:none;" onchange="importDataJSON(event)">
+            <button class="btn-primary" id="exportDataBtn" style="display:none;">📤 匯出數據</button>
+            <button class="btn-primary" id="importDataBtn" style="display:none;">📥 匯入數據</button>
+            <input type="file" id="importFileInput" accept=".json,.txt" style="display:none;">
 
-            <button class="btn-primary" id="changePwdBtn" style="display:none;" onclick="changeTeacherPasswordPrompt()">🔑 改密碼</button>
-            <button class="btn-danger" id="deleteCharBtn" style="display:none;" onclick="adminDeleteCurrentCharacter()">❌ 刪角</button>
-            <button class="btn-danger" id="clearAllDataBtn" style="display:none;" onclick="clearAllDataPrompt()">🗑️ 清除所有數據</button>
+            <button class="btn-primary" id="changePwdBtn" style="display:none;">🔑 改密碼</button>
+            <button class="btn-danger" id="deleteCharBtn" style="display:none;">❌ 刪角</button>
+            <button class="btn-danger" id="clearAllDataBtn" style="display:none;">🗑️ 清除所有數據</button>
         </div>
     </div>
 
@@ -155,7 +155,7 @@
                     <span id="charName" style="font-size: 1.2rem; font-weight: bold;">冒險者</span>
                     <span id="charGenderBadge"></span>
                 </div>
-                <button class="btn-primary" id="changeNameBtn" disabled onclick="changeNamePrompt()" style="font-size: 0.75rem;">改名(100金)</button>
+                <button class="btn-primary" id="changeNameBtn" disabled style="font-size: 0.75rem;">改名(100金)</button>
             </div>
 
             <div class="status-box">
@@ -165,11 +165,11 @@
                 </div>
                 <div class="bar-bg"><div class="bar-fill bar-exp" id="expBarFill" style="width:0%;"></div></div>
                 <div class="btn-grid">
-                    <button class="btn-exp" id="exp1Btn" disabled onclick="addExp(1)">+1</button>
-                    <button class="btn-exp" id="exp2Btn" disabled onclick="addExp(2)">+2</button>
-                    <button class="btn-exp" id="exp3Btn" disabled onclick="addExp(3)">+3</button>
-                    <button class="btn-exp" id="exp5Btn" disabled onclick="addExp(5)">+5</button>
-                    <button class="btn-exp" id="exp100Btn" disabled onclick="addExp(100)">+100</button>
+                    <button class="btn-exp" id="exp1Btn" disabled>+1</button>
+                    <button class="btn-exp" id="exp2Btn" disabled>+2</button>
+                    <button class="btn-exp" id="exp3Btn" disabled>+3</button>
+                    <button class="btn-exp" id="exp5Btn" disabled>+5</button>
+                    <button class="btn-exp" id="exp100Btn" disabled>+100</button>
                 </div>
             </div>
 
@@ -195,17 +195,17 @@
                     <span id="charGold" style="color:var(--gold); font-weight:bold;">0</span>
                 </div>
                 <div class="btn-grid">
-                    <button class="btn-gold" id="g1Btn" disabled onclick="addGold(1)">+1</button>
-                    <button class="btn-gold" id="g2Btn" disabled onclick="addGold(2)">+2</button>
-                    <button class="btn-gold" id="g3Btn" disabled onclick="addGold(3)">+3</button>
-                    <button class="btn-gold" id="g5Btn" disabled onclick="addGold(5)">+5</button>
-                    <button class="btn-gold" id="g10Btn" disabled onclick="addGold(10)">+10</button>
-                    <button class="btn-gold" id="g100Btn" disabled onclick="addGold(100)">+100</button>
+                    <button class="btn-gold" id="g1Btn" disabled>+1</button>
+                    <button class="btn-gold" id="g2Btn" disabled>+2</button>
+                    <button class="btn-gold" id="g3Btn" disabled>+3</button>
+                    <button class="btn-gold" id="g5Btn" disabled>+5</button>
+                    <button class="btn-gold" id="g10Btn" disabled>+10</button>
+                    <button class="btn-gold" id="g100Btn" disabled>+100</button>
                 </div>
             </div>
         </div>
 
-        <!-- 中欄：角色外觀與裝備（已整合寵物顯示） -->
+        <!-- 中欄：角色外觀與裝備 -->
         <div class="panel character-center">
             <div class="panel-title-large">🛡️ 冒險者裝備與外觀</div>
             <div class="avatar-container" id="mainAvatarContainer">
@@ -256,11 +256,11 @@
             <div class="panel-title-large" style="color:var(--accent);">👹 討伐地下城魔王</div>
             <div class="select-opponent-box">
                 <span style="font-weight:bold;">🎯 選擇挑戰關卡：</span>
-                <select id="bossStageSelect" onchange="loadBossStageData()"></select>
+                <select id="bossStageSelect"></select>
             </div>
             <div style="display:flex; gap:10px; width:100%;">
-                <button class="btn-boss" style="flex:1; padding:10px; font-size:1.1rem;" id="startBossBattleBtn" onclick="startBossBattle()">⚡ 開始討伐魔王！</button>
-                <button class="btn-accent" onclick="toggleBossArena()">⬅️ 返回冒險者主頁</button>
+                <button class="btn-boss" style="flex:1; padding:10px; font-size:1.1rem;" id="startBossBattleBtn">⚡ 開始討伐魔王！</button>
+                <button class="btn-accent" id="backFromBossBtn">⬅️ 返回冒險者主頁</button>
             </div>
             <div class="battle-log-box" id="bossBattleLogBox">
                 <div class="log-entry">👹 歡迎來到魔王對決試煉場！請選擇關卡後開始戰鬥。</div>
@@ -305,11 +305,11 @@
             <div class="panel-title-large" style="color:var(--danger);">⚔️ PK 戰鬥決討場</div>
             <div class="select-opponent-box">
                 <span style="font-weight:bold;">🎯 選擇 PK 對手：</span>
-                <select id="opponentSelect" onchange="loadOpponentData()"></select>
+                <select id="opponentSelect"></select>
             </div>
             <div style="display:flex; gap:10px; width:100%;">
-                <button class="btn-pk" style="flex:1; padding:10px; font-size:1.1rem;" id="startBattleBtn" onclick="startBattle()">⚡ 開始 PK 開打！</button>
-                <button class="btn-accent" onclick="togglePKArena()">⬅️ 返回角色畫面</button>
+                <button class="btn-pk" style="flex:1; padding:10px; font-size:1.1rem;" id="startBattleBtn">⚡ 開始 PK 開打！</button>
+                <button class="btn-accent" id="backFromPkBtn">⬅️ 返回角色畫面</button>
             </div>
             <div class="battle-log-box" id="battleLogBox">
                 <div class="log-entry">⚔️ 歡迎來到對決競技場！請選擇對手後點擊「開始 PK 開打」。</div>
@@ -331,7 +331,20 @@
         </div>
     </div>
 
-    <script>
+    <!-- 載入 Firebase JS SDK 與 遊戲邏輯 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // ⚠️ 請將下方 databaseURL 替換為您在 Firebase 第一階段複製的雲端資料庫網址
+        const firebaseConfig = {
+            databaseURL: "https://game601-7394a-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'rpg_students');
+
         const STAGE_REQUIREMENTS = [30, 50, 80, 100, 120];
         let teacherPassword = localStorage.getItem("rpg_teacher_pwd") || "0926";
         let isAdmin = false;
@@ -380,26 +393,70 @@
             { id: "bear", name: "強壯的棕熊", icon: "🐻", price: 500 }
         ];
 
-        let players = JSON.parse(localStorage.getItem("rpg_students_v8_data")) || [];
+        let players = [];
         let currentId = null;
 
         window.onload = () => {
-            if (players.length === 0) {
-                createNewCharacterData("小明", "boy");
-                createNewCharacterData("小華", "girl");
-            }
-            currentId = players[0].id;
-            
             document.addEventListener("click", () => {
                 if (isAdmin) resetLockTimer();
             });
 
-            renderTabs();
-            renderCharacter();
+            // 綁定所有按鈕事件
+            document.getElementById("toggleBossViewBtn").onclick = toggleBossArena;
+            document.getElementById("togglePkViewBtn").onclick = togglePKArena;
+            document.getElementById("addCharBtn").onclick = createNewCharacterPrompt;
+            document.getElementById("adminAuthBtn").onclick = toggleAdminAuth;
+            document.getElementById("exportDataBtn").onclick = exportDataJSON;
+            document.getElementById("importDataBtn").onclick = triggerImportFileInput;
+            document.getElementById("importFileInput").onchange = importDataJSON;
+            document.getElementById("changePwdBtn").onclick = changeTeacherPasswordPrompt;
+            document.getElementById("deleteCharBtn").onclick = adminDeleteCurrentCharacter;
+            document.getElementById("clearAllDataBtn").onclick = clearAllDataPrompt;
+            document.getElementById("changeNameBtn").onclick = changeNamePrompt;
+
+            document.getElementById("exp1Btn").onclick = () => addExp(1);
+            document.getElementById("exp2Btn").onclick = () => addExp(2);
+            document.getElementById("exp3Btn").onclick = () => addExp(3);
+            document.getElementById("exp5Btn").onclick = () => addExp(5);
+            document.getElementById("exp100Btn").onclick = () => addExp(100);
+
+            document.getElementById("g1Btn").onclick = () => addGold(1);
+            document.getElementById("g2Btn").onclick = () => addGold(2);
+            document.getElementById("g3Btn").onclick = () => addGold(3);
+            document.getElementById("g5Btn").onclick = () => addGold(5);
+            document.getElementById("g10Btn").onclick = () => addGold(10);
+            document.getElementById("g100Btn").onclick = () => addGold(100);
+
+            document.getElementById("bossStageSelect").onchange = loadBossStageData;
+            document.getElementById("startBossBattleBtn").onclick = startBossBattle;
+            document.getElementById("backFromBossBtn").onclick = toggleBossArena;
+
+            document.getElementById("opponentSelect").onchange = loadOpponentData;
+            document.getElementById("startBattleBtn").onclick = startBattle;
+            document.getElementById("backFromPkBtn").onclick = togglePKArena;
+
+            // 即時監聽 Firebase 雲端資料庫
+            onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    players = data;
+                } else {
+                    players = [];
+                    createNewCharacterData("小明", "boy");
+                    createNewCharacterData("小華", "girl");
+                }
+
+                if (!currentId || !players.find(p => p.id === currentId)) {
+                    currentId = players[0].id;
+                }
+
+                renderTabs();
+                renderCharacter();
+            });
         };
 
         function saveData() {
-            localStorage.setItem("rpg_students_v8_data", JSON.stringify(players));
+            set(dbRef, players);
         }
 
         function toggleAdminAuth() {
@@ -847,11 +904,10 @@
             if (!isAdmin) return;
             if (confirm("⚠️ 警告：確定要清空所有學生資料？")) {
                 if (prompt("🚨 輸入「DELETE」以確認刪除：") === "DELETE") {
-                    localStorage.removeItem("rpg_students_v8_data");
                     players = [];
                     createNewCharacterData("小明", "boy");
                     currentId = players[0].id;
-                    renderTabs(); renderCharacter();
+                    saveData(); renderTabs(); renderCharacter();
                     alert("🗑️ 所有數據已重置！");
                 }
             }
@@ -972,18 +1028,45 @@
 
                 const card = document.createElement("div");
                 card.className = "stat-card";
+                
+                const controlsDiv = document.createElement("div");
+                controlsDiv.style.display = "flex";
+                controlsDiv.style.gap = "4px";
+
+                if (!isMax) {
+                    const btnAdd = document.createElement("button");
+                    btnAdd.className = "btn-primary";
+                    btnAdd.disabled = !isAdmin;
+                    btnAdd.innerText = "+1 點";
+                    btnAdd.onclick = () => addPoint(key);
+                    controlsDiv.appendChild(btnAdd);
+                }
+
+                if (!isMax && stat.pts >= reqPts) {
+                    const btnUp = document.createElement("button");
+                    btnUp.className = "btn-success";
+                    btnUp.disabled = !isAdmin;
+                    btnUp.innerText = "升級裝備";
+                    btnUp.onclick = () => upgradeStat(key);
+                    controlsDiv.appendChild(btnUp);
+                }
+
+                if (isAdmin) {
+                    const btnEdit = document.createElement("button");
+                    btnEdit.className = "btn-danger";
+                    btnEdit.innerText = "改";
+                    btnEdit.onclick = () => adminEditStat(key);
+                    controlsDiv.appendChild(btnEdit);
+                }
+
                 card.innerHTML = `
                     <div class="stat-header"><span class="stat-name">${config.icon} ${config.name} (${config.title})</span><span class="stat-level">${stat.lvl > 0 ? stat.lvl + ' 級' : '基礎級'}</span></div>
                     <div class="bar-bg"><div class="bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #f1c40f, #e67e22);"></div></div>
                     <div class="stat-controls">
                         <span style="font-size: 0.8rem; color: var(--text-dim);">積點: ${stat.pts} ${isMax ? '(最高級)' : '/ ' + reqPts}</span>
-                        <div style="display:flex; gap:4px;">
-                            ${!isMax ? `<button class="btn-primary" ${!isAdmin ? 'disabled' : ''} onclick="addPoint('${key}')">+1 點</button>` : ''}
-                            ${(!isMax && stat.pts >= reqPts) ? `<button class="btn-success" ${!isAdmin ? 'disabled' : ''} onclick="upgradeStat('${key}')">升級裝備</button>` : ''}
-                            ${isAdmin ? `<button class="btn-danger" onclick="adminEditStat('${key}')">改</button>` : ''}
-                        </div>
                     </div>
                 `;
+                card.querySelector(".stat-controls").appendChild(controlsDiv);
                 statList.appendChild(card);
             });
 
@@ -1005,7 +1088,6 @@
             const container = document.getElementById("equipSlotsGrid");
             container.innerHTML = "";
             
-            // 繪製前5種標準屬性裝備
             slots.forEach(s => {
                 const lvl = Math.min(4, p.stats[s.key].lvl);
                 const item = document.createElement("div");
@@ -1014,7 +1096,6 @@
                 container.appendChild(item);
             });
 
-            // 第 6 欄：寵物夥伴外觀欄位
             const currentPet = PET_LIST.find(pt => pt.id === p.equippedPet);
             const petItem = document.createElement("div");
             petItem.className = "equip-slot-item";
@@ -1040,11 +1121,31 @@
                 const card = document.createElement("div");
                 card.className = `pet-card ${isEquipped ? 'active' : ''}`;
                 
-                let btnHtml = isOwned 
-                    ? (isEquipped ? `<button class="btn-danger" onclick="unequipPet()">取消跟隨</button>` : `<button class="btn-success" onclick="equipPet('${pet.id}')">選擇跟隨</button>`)
-                    : `<button class="btn-gold" onclick="buyPet('${pet.id}')">購買 (500金)</button>`;
+                const btnContainer = document.createElement("div");
+                if (isOwned) {
+                    if (isEquipped) {
+                        const btn = document.createElement("button");
+                        btn.className = "btn-danger";
+                        btn.innerText = "取消跟隨";
+                        btn.onclick = unequipPet;
+                        btnContainer.appendChild(btn);
+                    } else {
+                        const btn = document.createElement("button");
+                        btn.className = "btn-success";
+                        btn.innerText = "選擇跟隨";
+                        btn.onclick = () => equipPet(pet.id);
+                        btnContainer.appendChild(btn);
+                    }
+                } else {
+                    const btn = document.createElement("button");
+                    btn.className = "btn-gold";
+                    btn.innerText = "購買 (500金)";
+                    btn.onclick = () => buyPet(pet.id);
+                    btnContainer.appendChild(btn);
+                }
 
-                card.innerHTML = `<div class="pet-info"><div class="pet-avatar-icon">${pet.icon}</div><div><div style="font-weight:bold; font-size:1.1rem; color:var(--primary);">${pet.name}</div><div style="font-size:0.8rem; color:var(--gold);">${isOwned ? '已擁有' : '💰 500 金幣'}</div></div></div><div>${btnHtml}</div>`;
+                card.innerHTML = `<div class="pet-info"><div class="pet-avatar-icon">${pet.icon}</div><div><div style="font-weight:bold; font-size:1.1rem; color:var(--primary);">${pet.name}</div><div style="font-size:0.8rem; color:var(--gold);">${isOwned ? '已擁有' : '💰 500 金幣'}</div></div></div>`;
+                card.appendChild(btnContainer);
                 grid.appendChild(card);
             });
         }
@@ -1289,7 +1390,6 @@
 
             return `
                 <svg width="100%" height="100%" viewBox="0 0 320 380">
-                    <!-- Base Layer -->
                     <rect x="142" y="150" width="16" height="25" fill="${skinColor}"/>
                     <ellipse cx="110" cy="195" rx="9" ry="9" fill="${skinColor}"/>
                     <ellipse cx="190" cy="195" rx="9" ry="9" fill="${skinColor}"/>
@@ -1305,26 +1405,18 @@
                     <ellipse cx="180" cy="133" rx="7" ry="3.5" fill="#ff7675" opacity="0.6"/>
                     <path d="M144 140 Q150 146 156 140" stroke="#d63031" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 
-                    <!-- Feet Layer -->
                     <rect x="122" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
                     <rect x="154" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
 
-                    <!-- Body Layer -->
                     ${lvlB >= 1 ? `<path d="M110 170 L80 270 L220 270 L190 170 Z" fill="${bodyColor[lvlB]}" opacity="0.85"/>` : ''}
                     <rect x="125" y="165" width="50" height="40" rx="6" fill="${bodyColor[lvlB]}" stroke="#111" stroke-width="1.5"/>
                     ${skirtStyle}
 
-                    <!-- Hand Layer -->
                     <circle cx="110" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
                     <circle cx="190" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
 
-                    <!-- Head Layer -->
                     ${headEquip[lvlH]}
-
-                    <!-- Weapon Layer -->
                     ${weapons[lvlW]}
-
-                    <!-- Pet Layer (跟隨在右側) -->
                     ${petMarkup}
                 </svg>
             `;
