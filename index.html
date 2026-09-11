@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生 RPG 冒險者養成系統 v12.0 (寵物系統跟隨整合版)</title>
+    <style>
+        :root {
+            --bg-main: #12141d;
+            --bg-card: #1c1e2b;
+            --bg-inner: #151722;
+            --primary: #f39c12;
+            --primary-hover: #e67e22;
+            --accent: #9b59b6;
+            --text: #f8f9fa;
+            --text-dim: #a0a5b5;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --gold: #f1c40f;
+            --hp-color: #ff4757;
+            --mp-color: #1e90ff;
+            --exp-color: #f1c40f;
+            --boy-color: #3498db;
+            --girl-color: #e84393;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+        .top-bar {
+            width: 100%; max-width: 1380px; background: var(--bg-card); border-radius: 12px; padding: 12px 20px; margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px;
+        }
+
+        .character-tabs { display: flex; gap: 8px; overflow-x: auto; max-width: 50%; padding-bottom: 4px; }
+        .tab-btn {
+            background: var(--bg-inner); color: var(--text-dim); border: 2px solid #33374a; padding: 6px 14px; border-radius: 20px;
+            cursor: pointer; font-weight: bold; white-space: nowrap; transition: all 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--gold); transform: translateY(-2px); }
+
+        .admin-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .lock-timer { font-size: 0.85rem; color: var(--gold); font-weight: bold; background: #000; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--gold); }
+
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; padding: 6px 10px; font-size: 0.85rem; transition: background 0.2s, transform 0.1s; }
+        button:active { transform: scale(0.96); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-exp { background: var(--gold); color: #111; }
+        .btn-gold { background: var(--gold); color: #111; }
+        .btn-pk { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; font-size: 0.9rem; padding: 6px 14px; border: 1px solid #ff7675; }
+        .btn-boss { background: linear-gradient(135deg, #8e44ad, #2c3e50); color: #fff; font-size: 0.9rem; padding: 6px 14px; border: 1px solid #a29bfe; }
+
+        .main-stage { width: 100%; max-width: 1380px; display: grid; grid-template-columns: 1.1fr 1.6fr 1.1fr; gap: 15px; }
+        @media (max-width: 1100px) { .main-stage { grid-template-columns: 1fr; } }
+
+        .panel { background: var(--bg-card); border-radius: 16px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #2e3245; display: flex; flex-direction: column; gap: 12px; }
+        .panel-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); border-bottom: 2px solid #2e3245; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-title-large { font-size: 1.5rem; font-weight: bold; color: var(--primary); border-bottom: 3px solid #2e3245; padding-bottom: 8px; margin-bottom: 8px; text-align: center; }
+
+        .status-box { background: var(--bg-inner); padding: 10px 12px; border-radius: 8px; border: 1px solid #282b3d; }
+        .status-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem; }
+        .status-header-exp { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 6px; font-size: 1.8rem !important; }
+
+        .bar-bg { background: #000; height: 12px; border-radius: 6px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.3s; }
+        .bar-hp { background: linear-gradient(90deg, #ff6b6b, #ee5253); }
+        .bar-mp { background: linear-gradient(90deg, #48dbfb, #0abde3); }
+        .bar-exp { background: linear-gradient(90deg, #ffeaa7, #fdcb6e); }
+
+        .btn-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .gender-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .gender-badge.boy { background: var(--boy-color); color: #fff; }
+        .gender-badge.girl { background: var(--girl-color); color: #fff; }
+
+        .character-center { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; }
+        .avatar-container {
+            width: 320px; height: 350px; background: radial-gradient(circle, #2a2d42 0%, #111219 100%); border: 4px solid #4a4e69;
+            border-radius: 20px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 8px 20px rgba(0,0,0,0.5);
+        }
+        .avatar-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+
+        .equip-slots-grid { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+        .equip-slot-item { background: var(--bg-inner); padding: 8px 10px; border-radius: 8px; border: 1px solid #2e3245; display: flex; align-items: center; gap: 8px; }
+        .equip-slot-icon { width: 30px; height: 30px; background: #282b3d; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .equip-slot-title { color: var(--text-dim); font-size: 0.85rem !important; font-weight: bold; line-height: 1.2; }
+        .equip-slot-name { font-weight: bold; color: var(--primary); font-size: 0.95rem !important; line-height: 1.2; }
+
+        .stat-card { background: var(--bg-inner); padding: 10px; border-radius: 8px; border: 1px solid #2e3245; display: flex; flex-direction: column; gap: 6px; }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; }
+        .stat-name { font-weight: bold; font-size: 0.95rem; color: var(--primary); }
+        .stat-level { font-size: 0.8rem; background: #282b3d; padding: 2px 6px; border-radius: 8px; color: #4cd137; }
+        .stat-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+        .admin-badge { background: var(--danger); color: #fff; font-size: 0.7rem; padding: 1px 5px; border-radius: 4px; }
+
+        .pet-section { width: 100%; max-width: 1380px; margin-top: 15px; background: var(--bg-card); border-radius: 16px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #2e3245; }
+        .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 12px; }
+        .pet-card { background: var(--bg-inner); border: 2px solid #2e3245; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+        .pet-card.active { border-color: var(--gold); background: #252838; }
+        .pet-info { display: flex; align-items: center; gap: 10px; }
+        .pet-avatar-icon { font-size: 2rem; background: #282b3d; padding: 6px; border-radius: 10px; }
+
+        .pk-arena, .boss-arena { width: 100%; max-width: 1380px; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 15px; }
+        @media (max-width: 1100px) { .pk-arena, .boss-arena { grid-template-columns: 1fr; } }
+
+        .pk-fighter-card, .pk-center-panel { background: var(--bg-card); border-radius: 16px; padding: 18px; border: 2px solid #2e3245; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+
+        .battle-log-box { width: 100%; height: 350px; background: var(--bg-inner); border: 1px solid #282b3d; border-radius: 10px; padding: 12px; overflow-y: auto; font-size: 0.9rem; line-height: 1.6; display: flex; flex-direction: column; gap: 8px; }
+        .log-entry { padding: 6px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); border-left: 3px solid var(--primary); }
+        .log-entry.crit { border-left-color: var(--danger); background: rgba(231, 76, 60, 0.1); }
+        .log-entry.win { border-left-color: var(--gold); background: rgba(241, 196, 15, 0.15); font-weight: bold; }
+        .log-entry.magic { border-left-color: var(--accent); background: rgba(155, 89, 182, 0.15); }
+
+        .select-opponent-box { background: var(--bg-inner); padding: 12px; border-radius: 10px; border: 1px solid #2e3245; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        select { background: #222533; color: #fff; border: 1px solid var(--primary); padding: 6px 12px; border-radius: 6px; font-weight: bold; outline: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部管理選單 -->
+    <div class="top-bar">
+        <div class="character-tabs" id="characterTabs"></div>
+        <div class="admin-controls">
+            <button class="btn-boss" id="toggleBossViewBtn" onclick="toggleBossArena()">👹 魔王挑戰</button>
+            <button class="btn-pk" id="togglePkViewBtn" onclick="togglePKArena()">⚔️ 角色 PK</button>
+            <span id="lockTimerDisplay" class="lock-timer" style="display:none;">⏳ 20s</span>
+            <button class="btn-success" id="addCharBtn" disabled onclick="createNewCharacterPrompt()">+ 新增角色</button>
+            <button class="btn-accent" id="adminAuthBtn" onclick="toggleAdminAuth()">🔒 導師解鎖</button>
+
+            <button class="btn-primary" id="exportDataBtn" style="display:none;" onclick="exportDataJSON()">📤 匯出數據</button>
+            <button class="btn-primary" id="importDataBtn" style="display:none;" onclick="triggerImportFileInput()">📥 匯入數據</button>
+            <input type="file" id="importFileInput" accept=".json,.txt" style="display:none;" onchange="importDataJSON(event)">
+
+            <button class="btn-primary" id="changePwdBtn" style="display:none;" onclick="changeTeacherPasswordPrompt()">🔑 改密碼</button>
+            <button class="btn-danger" id="deleteCharBtn" style="display:none;" onclick="adminDeleteCurrentCharacter()">❌ 刪角</button>
+            <button class="btn-danger" id="clearAllDataBtn" style="display:none;" onclick="clearAllDataPrompt()">🗑️ 清除所有數據</button>
+        </div>
+    </div>
+
+    <!-- 【主畫面】：角色養成與屬性介面 -->
+    <div class="main-stage" id="mainStage">
+        <!-- 左欄：基本資質 -->
+        <div class="panel">
+            <div class="panel-title">
+                <span>👤 角色基本資質</span>
+                <span id="adminBadge"></span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span id="charName" style="font-size: 1.2rem; font-weight: bold;">冒險者</span>
+                    <span id="charGenderBadge"></span>
+                </div>
+                <button class="btn-primary" id="changeNameBtn" disabled onclick="changeNamePrompt()" style="font-size: 0.75rem;">改名(100金)</button>
+            </div>
+
+            <div class="status-box">
+                <div class="status-header-exp">
+                    <span style="color:var(--gold);" id="charLevel">LV. 1</span>
+                    <span style="color:var(--exp-color);" id="expTextDisplay">0 / 100 EXP</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-exp" id="expBarFill" style="width:0%;"></div></div>
+                <div class="btn-grid">
+                    <button class="btn-exp" id="exp1Btn" disabled onclick="addExp(1)">+1</button>
+                    <button class="btn-exp" id="exp2Btn" disabled onclick="addExp(2)">+2</button>
+                    <button class="btn-exp" id="exp3Btn" disabled onclick="addExp(3)">+3</button>
+                    <button class="btn-exp" id="exp5Btn" disabled onclick="addExp(5)">+5</button>
+                    <button class="btn-exp" id="exp100Btn" disabled onclick="addExp(100)">+100</button>
+                </div>
+            </div>
+
+            <div class="status-box">
+                <div class="status-header">
+                    <span style="color:var(--hp-color);">❤️ 血量 (HP)</span>
+                    <span id="hpTextDisplay">100 / 100</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-hp" id="hpBarFill" style="width:100%;"></div></div>
+            </div>
+
+            <div class="status-box">
+                <div class="status-header">
+                    <span style="color:var(--mp-color);">💧 魔力 (MP)</span>
+                    <span id="mpTextDisplay">50 / 50</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-mp" id="mpBarFill" style="width:100%;"></div></div>
+            </div>
+
+            <div class="status-box">
+                <div class="status-header">
+                    <span style="color:var(--gold);">🪙 金幣財富</span>
+                    <span id="charGold" style="color:var(--gold); font-weight:bold;">0</span>
+                </div>
+                <div class="btn-grid">
+                    <button class="btn-gold" id="g1Btn" disabled onclick="addGold(1)">+1</button>
+                    <button class="btn-gold" id="g2Btn" disabled onclick="addGold(2)">+2</button>
+                    <button class="btn-gold" id="g3Btn" disabled onclick="addGold(3)">+3</button>
+                    <button class="btn-gold" id="g5Btn" disabled onclick="addGold(5)">+5</button>
+                    <button class="btn-gold" id="g10Btn" disabled onclick="addGold(10)">+10</button>
+                    <button class="btn-gold" id="g100Btn" disabled onclick="addGold(100)">+100</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中欄：角色外觀與裝備（已整合寵物顯示） -->
+        <div class="panel character-center">
+            <div class="panel-title-large">🛡️ 冒險者裝備與外觀</div>
+            <div class="avatar-container" id="mainAvatarContainer">
+                <div class="avatar-layer" id="layer-base"></div>
+                <div class="avatar-layer" id="layer-feet"></div>
+                <div class="avatar-layer" id="layer-body"></div>
+                <div class="avatar-layer" id="layer-hand"></div>
+                <div class="avatar-layer" id="layer-head"></div>
+                <div class="avatar-layer" id="layer-weapon"></div>
+                <div class="avatar-layer" id="layer-pet"></div>
+            </div>
+            <div class="equip-slots-grid" id="equipSlotsGrid"></div>
+        </div>
+
+        <!-- 右欄：屬性加點 -->
+        <div class="panel">
+            <div class="panel-title">⚡ 屬性養成與加點</div>
+            <div style="display:flex; flex-direction:column; gap:8px;" id="statList"></div>
+        </div>
+    </div>
+
+    <!-- 寵物商店 -->
+    <div class="pet-section" id="petSection" style="display:block;">
+        <div class="panel-title">
+            <span>🐾 寵物夥伴商店 (統一售價: 💰 500 金幣)</span>
+            <span style="font-size:0.85rem; color:var(--text-dim);">購買後將自動出現在「冒險者裝備與外觀」並跟隨在角色右側</span>
+        </div>
+        <div class="pet-grid" id="petGrid"></div>
+    </div>
+
+    <!-- 【魔王挑戰競技場】 -->
+    <div class="boss-arena" id="bossArena" style="display:none;">
+        <div class="pk-fighter-card">
+            <div class="panel-title-large" style="margin-bottom:0;">🔥 挑戰者</div>
+            <h2 id="bossPlayerName" style="color:var(--gold);">冒險者</h2>
+            <div id="bossPlayerLevel" style="font-weight:bold; color:var(--text-dim);">LV. 1</div>
+            <div class="avatar-container" id="bossPlayerAvatar" style="width:260px; height:280px;"></div>
+            <div class="status-box" style="width:100%;">
+                <div class="status-header">
+                    <span style="color:var(--hp-color);">❤️ 血量 (HP)</span>
+                    <span id="bossPlayerHpText">100 / 100</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-hp" id="bossPlayerHpBar" style="width:100%;"></div></div>
+            </div>
+        </div>
+
+        <div class="pk-center-panel">
+            <div class="panel-title-large" style="color:var(--accent);">👹 討伐地下城魔王</div>
+            <div class="select-opponent-box">
+                <span style="font-weight:bold;">🎯 選擇挑戰關卡：</span>
+                <select id="bossStageSelect" onchange="loadBossStageData()"></select>
+            </div>
+            <div style="display:flex; gap:10px; width:100%;">
+                <button class="btn-boss" style="flex:1; padding:10px; font-size:1.1rem;" id="startBossBattleBtn" onclick="startBossBattle()">⚡ 開始討伐魔王！</button>
+                <button class="btn-accent" onclick="toggleBossArena()">⬅️ 返回冒險者主頁</button>
+            </div>
+            <div class="battle-log-box" id="bossBattleLogBox">
+                <div class="log-entry">👹 歡迎來到魔王對決試煉場！請選擇關卡後開始戰鬥。</div>
+            </div>
+        </div>
+
+        <div class="pk-fighter-card">
+            <div class="panel-title-large" style="margin-bottom:0; color:var(--danger);">💀 關卡魔王</div>
+            <h2 id="bossName" style="color:var(--danger);">第一關 大蜘蛛</h2>
+            <div id="bossReqLevel" style="font-weight:bold; color:var(--gold);">限制等級：LV.5</div>
+            <div class="avatar-container" id="bossAvatar" style="width:260px; height:280px;"></div>
+            <div class="status-box" style="width:100%;">
+                <div class="status-header">
+                    <span style="color:var(--hp-color);">❤️ 魔王血量 (HP)</span>
+                    <span id="bossHpText">200 / 200</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-hp" id="bossHpBar" style="width:100%;"></div></div>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-dim); text-align:center;" id="bossSkillDesc">
+                ⚔️ 攻擊力: 30 | ✨ 魔法招式: 吐絲攻擊 (+5)
+            </div>
+        </div>
+    </div>
+
+    <!-- 【PK 競技場畫面】 -->
+    <div class="pk-arena" id="pkArena" style="display:none;">
+        <div class="pk-fighter-card">
+            <div class="panel-title-large" style="margin-bottom:0;">🔥 挑戰者</div>
+            <h2 id="pkLeftName" style="color:var(--gold);">冒險者 A</h2>
+            <div id="pkLeftLevel" style="font-weight:bold; color:var(--text-dim);">LV. 1</div>
+            <div class="avatar-container" id="pkLeftAvatar" style="width:260px; height:280px;"></div>
+            <div class="status-box" style="width:100%;">
+                <div class="status-header">
+                    <span style="color:var(--hp-color);">❤️ 血量 (HP)</span>
+                    <span id="pkLeftHpText">100 / 100</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-hp" id="pkLeftHpBar" style="width:100%;"></div></div>
+            </div>
+        </div>
+
+        <div class="pk-center-panel">
+            <div class="panel-title-large" style="color:var(--danger);">⚔️ PK 戰鬥決討場</div>
+            <div class="select-opponent-box">
+                <span style="font-weight:bold;">🎯 選擇 PK 對手：</span>
+                <select id="opponentSelect" onchange="loadOpponentData()"></select>
+            </div>
+            <div style="display:flex; gap:10px; width:100%;">
+                <button class="btn-pk" style="flex:1; padding:10px; font-size:1.1rem;" id="startBattleBtn" onclick="startBattle()">⚡ 開始 PK 開打！</button>
+                <button class="btn-accent" onclick="togglePKArena()">⬅️ 返回角色畫面</button>
+            </div>
+            <div class="battle-log-box" id="battleLogBox">
+                <div class="log-entry">⚔️ 歡迎來到對決競技場！請選擇對手後點擊「開始 PK 開打」。</div>
+            </div>
+        </div>
+
+        <div class="pk-fighter-card">
+            <div class="panel-title-large" style="margin-bottom:0; color:var(--danger);">💀 應戰者</div>
+            <h2 id="pkRightName" style="color:var(--danger);">對手 B</h2>
+            <div id="pkRightLevel" style="font-weight:bold; color:var(--text-dim);">LV. 1</div>
+            <div class="avatar-container" id="pkRightAvatar" style="width:260px; height:280px;"></div>
+            <div class="status-box" style="width:100%;">
+                <div class="status-header">
+                    <span style="color:var(--hp-color);">❤️ 血量 (HP)</span>
+                    <span id="pkRightHpText">100 / 100</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill bar-hp" id="pkRightHpBar" style="width:100%;"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STAGE_REQUIREMENTS = [30, 50, 80, 100, 120];
+        let teacherPassword = localStorage.getItem("rpg_teacher_pwd") || "0926";
+        let isAdmin = false;
+        let lockTimer = null;
+        let countdownSeconds = 20;
+        let activeView = "main";
+        let battleInterval = null;
+
+        const BOSS_STAGES = [
+            { stage: 1, reqLevel: 5,  name: "第一關 大蜘蛛",    hp: 200,  atk: 30,  magicName: "吐絲攻擊",     magicAtk: 5,  rewardGold: 100, rewardExp: 50,  type: "spider", color: "#8e44ad" },
+            { stage: 2, reqLevel: 10, name: "第二關 毒絲蜘蛛",  hp: 300,  atk: 40,  magicName: "毒絲攻擊",     magicAtk: 10, rewardGold: 200, rewardExp: 100, type: "spider", color: "#27ae60" },
+            { stage: 3, reqLevel: 15, name: "第三關 大眼怪",    hp: 400,  atk: 50,  magicName: "眨眼攻擊",     magicAtk: 15, rewardGold: 300, rewardExp: 150, type: "eyeball", color: "#f39c12" },
+            { stage: 4, reqLevel: 20, name: "第四關 邪惡眼怪",  hp: 500,  atk: 60,  magicName: "眼光射線攻擊", magicAtk: 20, rewardGold: 400, rewardExp: 200, type: "eyeball", color: "#c0392b" },
+            { stage: 5, reqLevel: 25, name: "第五關 吸血鬼",    hp: 600,  atk: 70,  magicName: "吸血攻擊",     magicAtk: 25, rewardGold: 500, rewardExp: 250, type: "vampire", color: "#2c3e50" },
+            { stage: 6, reqLevel: 30, name: "第六關 紅眼吸血鬼",hp: 700,  atk: 80,  magicName: "紅眼吸血攻擊", magicAtk: 30, rewardGold: 600, rewardExp: 300, type: "vampire", color: "#e74c3c" },
+            { stage: 7, reqLevel: 35, name: "第七關 大殭屍",    hp: 800,  atk: 90,  magicName: "狂抓攻擊",     magicAtk: 35, rewardGold: 700, rewardExp: 350, type: "zombie", color: "#16a085" },
+            { stage: 8, reqLevel: 40, name: "第八關 殭屍王",    hp: 900,  atk: 100, magicName: "狂暴猛抓攻擊", magicAtk: 40, rewardGold: 800, rewardExp: 400, type: "zombie", color: "#8e44ad" },
+            { stage: 9, reqLevel: 45, name: "第九關 大黑豹",    hp: 1000, atk: 110, magicName: "狂掌攻擊",     magicAtk: 45, rewardGold: 900, rewardExp: 450, type: "panther", color: "#34495e" },
+            { stage: 10,reqLevel: 50, name: "第十關 地獄黑豹",  hp: 1100, atk: 120, magicName: "黑暗狂掌攻擊", magicAtk: 50, rewardGold: 1000,rewardExp: 500, type: "panther", color: "#000000" }
+        ];
+
+        const STAT_CONFIG = {
+            morality: { name: "品德", title: "禮貌能力", icon: "👞" },
+            wisdom:   { name: "智慧", title: "思考能力", icon: "👑" },
+            strength: { name: "力量", title: "體能能力", icon: "🛡️" },
+            charm:    { name: "魅力", title: "人際能力", icon: "🧤" },
+            spirit:   { name: "精神", title: "專注能力", icon: "⚔️" }
+        };
+
+        const EQUIP_NAMES = {
+            head: ["素顏髮型", "羊角戰鬥角飾", "雙翼戰甲羽飾", "神聖巫女紅結", "天使聖潔頭冠"],
+            body: ["基礎訓練服", "騎士披風長袍", "赤紅冒險戰裙", "巫女紅袖神衣", "聖天戰鎧重甲"],
+            hand: ["赤手空拳", "皮革護腕", "黃金戰鬥護手", "朱紅繩結護手", "聖光支配者護手"],
+            feet: ["短靴", "鋼鐵護脛靴", "長筒戰靴", "日式漆黑長襪", "黃金高階長靴"],
+            weapon: ["練習木棍", "守護者長劍", "精靈雙刃短劍", "巫術神聖祭符", "光輝聖典神器"]
+        };
+
+        const PET_LIST = [
+            { id: "dog", name: "調皮的小狗", icon: "🐶", price: 500 },
+            { id: "cat", name: "可愛的小貓", icon: "🐱", price: 500 },
+            { id: "butterfly", name: "華麗的蝴蝶", icon: "🦋", price: 500 },
+            { id: "rabbit", name: "靈巧的兔子", icon: "🐰", price: 500 },
+            { id: "lion", name: "尊貴的獅子", icon: "🦁", price: 500 },
+            { id: "tiger", name: "霸氣的老虎", icon: "🐯", price: 500 },
+            { id: "eagle", name: "高冷的老鷹", icon: "🦅", price: 500 },
+            { id: "bear", name: "強壯的棕熊", icon: "🐻", price: 500 }
+        ];
+
+        let players = JSON.parse(localStorage.getItem("rpg_students_v8_data")) || [];
+        let currentId = null;
+
+        window.onload = () => {
+            if (players.length === 0) {
+                createNewCharacterData("小明", "boy");
+                createNewCharacterData("小華", "girl");
+            }
+            currentId = players[0].id;
+            
+            document.addEventListener("click", () => {
+                if (isAdmin) resetLockTimer();
+            });
+
+            renderTabs();
+            renderCharacter();
+        };
+
+        function saveData() {
+            localStorage.setItem("rpg_students_v8_data", JSON.stringify(players));
+        }
+
+        function toggleAdminAuth() {
+            if (isAdmin) {
+                lockAdmin();
+                alert("已手動上鎖導師權限。");
+            } else {
+                const pwd = prompt("請輸入導師安全密碼：");
+                if (pwd === teacherPassword) {
+                    unlockAdmin();
+                } else if (pwd !== null) {
+                    alert("密碼錯誤！無法解鎖。");
+                }
+            }
+        }
+
+        function unlockAdmin() { isAdmin = true; resetLockTimer(); renderCharacter(); }
+        function lockAdmin() { isAdmin = false; clearInterval(lockTimer); document.getElementById("lockTimerDisplay").style.display = "none"; renderCharacter(); }
+
+        function resetLockTimer() {
+            clearInterval(lockTimer);
+            countdownSeconds = 20;
+            const timerDisplay = document.getElementById("lockTimerDisplay");
+            timerDisplay.style.display = "inline-block";
+            timerDisplay.innerText = `⏳ ${countdownSeconds}s`;
+
+            lockTimer = setInterval(() => {
+                countdownSeconds--;
+                if (countdownSeconds <= 0) {
+                    lockAdmin();
+                    alert("⏰ 已有 20 秒未操作，導師介面已自動上鎖！");
+                } else {
+                    timerDisplay.innerText = `⏳ ${countdownSeconds}s`;
+                }
+            }, 1000);
+        }
+
+        function switchView(target) {
+            if (battleInterval) clearInterval(battleInterval);
+            activeView = target;
+            
+            const mainStage = document.getElementById("mainStage");
+            const petSection = document.getElementById("petSection");
+            const pkArena = document.getElementById("pkArena");
+            const bossArena = document.getElementById("bossArena");
+
+            mainStage.style.display = target === "main" ? "grid" : "none";
+            petSection.style.display = target === "main" ? "block" : "none";
+            pkArena.style.display = target === "pk" ? "grid" : "none";
+            bossArena.style.display = target === "boss" ? "grid" : "none";
+
+            document.getElementById("togglePkViewBtn").innerText = target === "pk" ? "🏠 返回冒險者主頁" : "⚔️ 角色 PK";
+            document.getElementById("toggleBossViewBtn").innerText = target === "boss" ? "🏠 返回冒險者主頁" : "👹 魔王挑戰";
+
+            if (target === "pk") initPKMode();
+            if (target === "boss") initBossMode();
+            if (target === "main") renderCharacter();
+        }
+
+        function togglePKArena() { switchView(activeView === "pk" ? "main" : "pk"); }
+        function toggleBossArena() { switchView(activeView === "boss" ? "main" : "boss"); }
+
+        /* --- 魔王挑戰系統邏輯 --- */
+        function initBossMode() {
+            const p = getCurrentPlayer();
+            if (!p.clearedBosses) p.clearedBosses = [];
+
+            document.getElementById("bossPlayerName").innerText = p.name;
+            document.getElementById("bossPlayerLevel").innerText = `LV. ${p.level}`;
+            document.getElementById("bossPlayerHpText").innerText = `${p.hp} / ${p.maxHp}`;
+            document.getElementById("bossPlayerHpBar").style.width = `${(p.hp / p.maxHp) * 100}%`;
+            renderAvatarToContainer("bossPlayerAvatar", p);
+
+            const select = document.getElementById("bossStageSelect");
+            select.innerHTML = "";
+
+            BOSS_STAGES.forEach(st => {
+                const opt = document.createElement("option");
+                opt.value = st.stage;
+                const isCleared = p.clearedBosses.includes(st.stage);
+                const isUnlocked = (st.stage === 1 || p.clearedBosses.includes(st.stage - 1)) && p.level >= st.reqLevel;
+                
+                let tag = "";
+                if (isCleared) tag = " [已通關]";
+                else if (!isUnlocked) tag = ` (未解鎖:需LV.${st.reqLevel}${st.stage > 1 ? `且過第${st.stage-1}關` : ''})`;
+
+                opt.innerText = `${st.name}${tag}`;
+                select.appendChild(opt);
+            });
+
+            loadBossStageData();
+        }
+
+        function loadBossStageData() {
+            const p = getCurrentPlayer();
+            const stageNum = parseInt(document.getElementById("bossStageSelect").value, 10);
+            const boss = BOSS_STAGES.find(b => b.stage === stageNum);
+            if (!boss) return;
+
+            document.getElementById("bossName").innerText = boss.name;
+            document.getElementById("bossReqLevel").innerText = `限制等級：LV.${boss.reqLevel}`;
+            document.getElementById("bossHpText").innerText = `${boss.hp} / ${boss.hp}`;
+            document.getElementById("bossHpBar").style.width = "100%";
+            document.getElementById("bossSkillDesc").innerText = `⚔️ 攻擊力: ${boss.atk} | ✨ 魔法: ${boss.magicName} (+${boss.magicAtk})`;
+
+            renderBossAvatar(boss);
+
+            const isUnlocked = (boss.stage === 1 || p.clearedBosses.includes(boss.stage - 1)) && p.level >= boss.reqLevel;
+            document.getElementById("startBossBattleBtn").disabled = !isUnlocked;
+        }
+
+        function startBossBattle() {
+            const p = getCurrentPlayer();
+            const stageNum = parseInt(document.getElementById("bossStageSelect").value, 10);
+            const boss = BOSS_STAGES.find(b => b.stage === stageNum);
+            if (!boss) return;
+
+            document.getElementById("startBossBattleBtn").disabled = true;
+            const logBox = document.getElementById("bossBattleLogBox");
+            logBox.innerHTML = "";
+
+            let playerHp = p.hp;
+            let bossHp = boss.hp;
+
+            addBossLog(`👹 討伐戰開始！【${p.name}】對決【${boss.name}】！`, "win");
+
+            let round = 1;
+            battleInterval = setInterval(() => {
+                if (playerHp <= 0 || bossHp <= 0) {
+                    clearInterval(battleInterval);
+                    finishBossBattle(p, boss, playerHp, bossHp);
+                    return;
+                }
+
+                // 玩家攻擊
+                const str = p.stats.strength.lvl * 5 + p.level * 3;
+                const spi = p.stats.spirit.lvl * 4;
+                const isCrit = Math.random() < (0.1 + p.stats.wisdom.lvl * 0.05);
+                let pDmg = Math.floor((str + spi + Math.random() * 10 + 10) * (isCrit ? 1.8 : 1.0));
+                bossHp = Math.max(0, bossHp - pDmg);
+
+                document.getElementById("bossHpText").innerText = `${bossHp} / ${boss.hp}`;
+                document.getElementById("bossHpBar").style.width = `${(bossHp / boss.hp) * 100}%`;
+                addBossLog(`第 ${round} 回合：【${p.name}】攻擊${isCrit ? '⚡ 暴擊！' : ''}，對魔王造成 ${pDmg} 點傷害！`, isCrit ? 'crit' : '');
+
+                if (bossHp <= 0) {
+                    clearInterval(battleInterval);
+                    finishBossBattle(p, boss, playerHp, bossHp);
+                    return;
+                }
+
+                // 魔王攻擊
+                const isMagic = Math.random() < 0.35;
+                let bDmg = boss.atk + Math.floor(Math.random() * 8);
+                if (isMagic) bDmg += boss.magicAtk;
+
+                playerHp = Math.max(0, playerHp - bDmg);
+                document.getElementById("bossPlayerHpText").innerText = `${playerHp} / ${p.maxHp}`;
+                document.getElementById("bossPlayerHpBar").style.width = `${(playerHp / p.maxHp) * 100}%`;
+
+                if (isMagic) {
+                    addBossLog(`└【${boss.name}】施展魔法✨【${boss.magicName}】！造成 ${bDmg} 點重創傷害！`, 'magic');
+                } else {
+                    addBossLog(`└【${boss.name}】發動攻擊，造成 ${bDmg} 點傷害！`);
+                }
+
+                round++;
+            }, 1100);
+        }
+
+        function finishBossBattle(player, boss, playerHp, bossHp) {
+            document.getElementById("startBossBattleBtn").disabled = false;
+            if (!player.clearedBosses) player.clearedBosses = [];
+
+            if (playerHp > 0 && bossHp <= 0) {
+                const isAlreadyCleared = player.clearedBosses.includes(boss.stage);
+
+                if (!isAlreadyCleared) {
+                    player.clearedBosses.push(boss.stage);
+                    player.gold += boss.rewardGold;
+                    
+                    addBossLog(`🏆 首勝通關！成功擊敗【${boss.name}】！`, "win");
+                    addBossLog(`💰 獲得通關獎勵：💰 ${boss.rewardGold} 金幣，✨ ${boss.rewardExp} 經驗值！`, "win");
+                    
+                    addExpInternal(player, boss.rewardExp);
+                    saveData();
+                    alert(`🎉 首勝通關！擊敗【${boss.name}】！\n💰 獲得金幣：+${boss.rewardGold}\n✨ 獲得經驗：+${boss.rewardExp}`);
+                } else {
+                    addBossLog(`🏆 再次擊敗【${boss.name}】！`, "win");
+                    addBossLog(`⚠️ 該關卡先前已通關，重複挑戰不給予金幣與經驗值獎勵。`, "");
+                    saveData();
+                    alert(`🎉 成功擊敗【${boss.name}】！\n(重複挑戰不發放金幣與經驗值)`);
+                }
+            } else {
+                const actualDeductGold = Math.min(100, player.gold);
+                const actualDeductExp = Math.min(50, player.exp);
+
+                player.gold -= actualDeductGold;
+                player.exp -= actualDeductExp;
+
+                addBossLog(`💀 討伐失敗！【${player.name}】不敵魔王而倒下...`, "crit");
+                addBossLog(`💸 失敗懲罰：扣除 💰 ${actualDeductGold} 金幣，✨ ${actualDeductExp} 經驗值！`, "crit");
+
+                saveData();
+                alert(`💀 挑戰失敗！\n💸 扣除金幣：-${actualDeductGold}\n✨ 扣除經驗：-${actualDeductExp}\n請提升能力後再試！`);
+            }
+            initBossMode();
+        }
+
+        function addBossLog(text, className = '') {
+            const logBox = document.getElementById("bossBattleLogBox");
+            const entry = document.createElement("div");
+            entry.className = `log-entry ${className}`;
+            entry.innerText = text;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function renderBossAvatar(boss) {
+            const container = document.getElementById("bossAvatar");
+            let svgContent = "";
+
+            if (boss.type === "spider") {
+                svgContent = `
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <path d="M 30 100 Q 10 40 80 80 M 170 100 Q 190 40 120 80 M 20 120 Q 0 120 80 110 M 180 120 Q 200 120 120 110 M 30 140 Q 10 180 80 130 M 170 140 Q 190 180 120 130" stroke="${boss.color}" stroke-width="8" fill="none"/>
+                        <circle cx="100" cy="110" r="40" fill="${boss.color}"/>
+                        <circle cx="100" cy="70" r="25" fill="#111"/>
+                        <circle cx="90" cy="65" r="5" fill="#e74c3c"/><circle cx="110" cy="65" r="5" fill="#e74c3c"/>
+                        <circle cx="80" cy="75" r="3" fill="#e74c3c"/><circle cx="120" cy="75" r="3" fill="#e74c3c"/>
+                        <polygon points="90,90 95,100 85,100" fill="#fff"/>
+                        <polygon points="110,90 115,100 105,100" fill="#fff"/>
+                    </svg>
+                `;
+            } else if (boss.type === "eyeball") {
+                svgContent = `
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <circle cx="100" cy="100" r="70" fill="#f8f9fa" stroke="#333" stroke-width="4"/>
+                        <circle cx="100" cy="100" r="35" fill="${boss.color}"/>
+                        <circle cx="100" cy="100" r="15" fill="#000"/>
+                        <circle cx="110" cy="90" r="6" fill="#fff"/>
+                        <path d="M 40 50 Q 20 20 10 40 M 160 50 Q 180 20 190 40 M 100 30 L 100 5 M 40 150 Q 20 180 10 160 M 160 150 Q 180 180 190 160" stroke="${boss.color}" stroke-width="6" fill="none"/>
+                    </svg>
+                `;
+            } else if (boss.type === "vampire") {
+                svgContent = `
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <path d="M 30 180 Q 100 80 170 180 Z" fill="#111"/>
+                        <polygon points="50,180 100,120 150,180" fill="${boss.color}"/>
+                        <circle cx="100" cy="90" r="30" fill="#f5cd79"/>
+                        <path d="M 70 80 Q 100 60 130 80 Q 100 95 70 80 Z" fill="#2d3436"/>
+                        <circle cx="90" cy="90" r="4" fill="${boss.color === '#e74c3c' ? '#ff0000' : '#000'}"/>
+                        <circle cx="110" cy="90" r="4" fill="${boss.color === '#e74c3c' ? '#ff0000' : '#000'}"/>
+                        <polygon points="88,102 91,110 85,110" fill="#fff"/>
+                        <polygon points="112,102 115,110 109,110" fill="#fff"/>
+                    </svg>
+                `;
+            } else if (boss.type === "zombie") {
+                svgContent = `
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <rect x="70" y="60" width="60" height="70" rx="10" fill="${boss.color}"/>
+                        <rect x="65" y="130" width="70" height="50" rx="5" fill="#2d3436"/>
+                        <circle cx="85" cy="85" r="7" fill="#fff"/><circle cx="85" cy="85" r="3" fill="#000"/>
+                        <circle cx="115" cy="85" r="9" fill="#e74c3c"/><circle cx="115" cy="85" r="2" fill="#000"/>
+                        <line x1="80" y1="110" x2="120" y2="110" stroke="#000" stroke-width="3"/>
+                        <line x1="90" y1="105" x2="90" y2="115" stroke="#000" stroke-width="2"/>
+                        <line x1="110" y1="105" x2="110" y2="115" stroke="#000" stroke-width="2"/>
+                    </svg>
+                `;
+            } else if (boss.type === "panther") {
+                svgContent = `
+                    <svg width="100%" height="100%" viewBox="0 0 200 200">
+                        <ellipse cx="100" cy="120" rx="60" ry="40" fill="${boss.color === '#000000' ? '#111' : boss.color}"/>
+                        <circle cx="60" cy="90" r="28" fill="${boss.color === '#000000' ? '#111' : boss.color}"/>
+                        <polygon points="40,70 50,45 62,65" fill="${boss.color === '#000000' ? '#222' : '#2c3e50'}"/>
+                        <polygon points="65,65 77,45 85,70" fill="${boss.color === '#000000' ? '#222' : '#2c3e50'}"/>
+                        <circle cx="50" cy="85" r="5" fill="#f1c40f"/>
+                        <circle cx="70" cy="85" r="5" fill="#f1c40f"/>
+                        <polygon points="58,95 62,100 54,100" fill="#e74c3c"/>
+                    </svg>
+                `;
+            }
+
+            container.innerHTML = svgContent;
+        }
+
+        /* --- PK 模式邏輯 --- */
+        function initPKMode() {
+            const leftPlayer = getCurrentPlayer();
+            document.getElementById("pkLeftName").innerText = leftPlayer.name;
+            document.getElementById("pkLeftLevel").innerText = `LV. ${leftPlayer.level}`;
+            document.getElementById("pkLeftHpText").innerText = `${leftPlayer.hp} / ${leftPlayer.maxHp}`;
+            document.getElementById("pkLeftHpBar").style.width = `${(leftPlayer.hp / leftPlayer.maxHp) * 100}%`;
+            renderAvatarToContainer("pkLeftAvatar", leftPlayer);
+
+            const select = document.getElementById("opponentSelect");
+            select.innerHTML = "";
+            const opponents = players.filter(p => p.id !== leftPlayer.id);
+
+            if (opponents.length === 0) {
+                const opt = document.createElement("option");
+                opt.innerText = "無其他對手 (請新增角色)";
+                select.appendChild(opt);
+                document.getElementById("startBattleBtn").disabled = true;
+                return;
+            }
+
+            opponents.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.innerText = `${p.name} (LV.${p.level})`;
+                select.appendChild(opt);
+            });
+
+            document.getElementById("startBattleBtn").disabled = false;
+            loadOpponentData();
+        }
+
+        function loadOpponentData() {
+            const select = document.getElementById("opponentSelect");
+            const rightId = select.value;
+            const rightPlayer = players.find(p => p.id === rightId);
+            if (!rightPlayer) return;
+
+            document.getElementById("pkRightName").innerText = rightPlayer.name;
+            document.getElementById("pkRightLevel").innerText = `LV. ${rightPlayer.level}`;
+            document.getElementById("pkRightHpText").innerText = `${rightPlayer.hp} / ${rightPlayer.maxHp}`;
+            document.getElementById("pkRightHpBar").style.width = `${(rightPlayer.hp / rightPlayer.maxHp) * 100}%`;
+            renderAvatarToContainer("pkRightAvatar", rightPlayer);
+        }
+
+        function startBattle() {
+            const leftPlayer = getCurrentPlayer();
+            const rightId = document.getElementById("opponentSelect").value;
+            const rightPlayer = players.find(p => p.id === rightId);
+            if (!leftPlayer || !rightPlayer) return;
+
+            document.getElementById("startBattleBtn").disabled = true;
+            const logBox = document.getElementById("battleLogBox");
+            logBox.innerHTML = "";
+
+            let leftHp = leftPlayer.hp;
+            let rightHp = rightPlayer.hp;
+
+            addPkLog(`⚔️ PK 戰鬥開始！【${leftPlayer.name}】 VS 【${rightPlayer.name}】！`, "win");
+
+            let round = 1;
+            battleInterval = setInterval(() => {
+                if (leftHp <= 0 || rightHp <= 0) {
+                    clearInterval(battleInterval);
+                    finishBattle(leftPlayer, rightPlayer, leftHp, rightHp);
+                    return;
+                }
+
+                // 左方攻擊
+                const lStr = leftPlayer.stats.strength.lvl * 5 + leftPlayer.level * 3;
+                const lSpi = leftPlayer.stats.spirit.lvl * 4;
+                const lCrit = Math.random() < (0.1 + leftPlayer.stats.wisdom.lvl * 0.05);
+                let lDmg = Math.floor((lStr + lSpi + Math.random() * 10 + 10) * (lCrit ? 1.8 : 1.0));
+                rightHp = Math.max(0, rightHp - lDmg);
+
+                document.getElementById("pkRightHpText").innerText = `${rightHp} / ${rightPlayer.maxHp}`;
+                document.getElementById("pkRightHpBar").style.width = `${(rightHp / rightPlayer.maxHp) * 100}%`;
+                addPkLog(`第 ${round} 回合：【${leftPlayer.name}】發動攻擊${lCrit ? '⚡ 暴擊！' : ''}，造成 ${lDmg} 點傷害！`, lCrit ? 'crit' : '');
+
+                if (rightHp <= 0) {
+                    clearInterval(battleInterval);
+                    finishBattle(leftPlayer, rightPlayer, leftHp, rightHp);
+                    return;
+                }
+
+                // 右方攻擊
+                const rStr = rightPlayer.stats.strength.lvl * 5 + rightPlayer.level * 3;
+                const rSpi = rightPlayer.stats.spirit.lvl * 4;
+                const rCrit = Math.random() < (0.1 + rightPlayer.stats.wisdom.lvl * 0.05);
+                let rDmg = Math.floor((rStr + rSpi + Math.random() * 10 + 10) * (rCrit ? 1.8 : 1.0));
+                leftHp = Math.max(0, leftHp - rDmg);
+
+                document.getElementById("pkLeftHpText").innerText = `${leftHp} / ${leftPlayer.maxHp}`;
+                document.getElementById("pkLeftHpBar").style.width = `${(leftHp / leftPlayer.maxHp) * 100}%`;
+                addPkLog(`└【${rightPlayer.name}】反擊${rCrit ? '⚡ 暴擊！' : ''}，造成 ${rDmg} 點傷害！`, rCrit ? 'crit' : '');
+
+                round++;
+            }, 1000);
+        }
+
+        function finishBattle(left, right, leftHp, rightHp) {
+            document.getElementById("startBattleBtn").disabled = false;
+            if (leftHp > 0 && rightHp <= 0) {
+                addPkLog(`🏆 戰鬥結束！【${left.name}】獲得最終勝利！`, "win");
+                alert(`🎉 恭喜【${left.name}】獲得 PK 勝利！`);
+            } else if (rightHp > 0 && leftHp <= 0) {
+                addPkLog(`💀 戰鬥結束！【${right.name}】獲得最終勝利！`, "crit");
+                alert(`💀【${left.name}】戰敗，由【${right.name}】獲得勝利！`);
+            }
+        }
+
+        function addPkLog(text, className = '') {
+            const logBox = document.getElementById("battleLogBox");
+            const entry = document.createElement("div");
+            entry.className = `log-entry ${className}`;
+            entry.innerText = text;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        /* --- 基礎數據與介面維護 --- */
+        function exportDataJSON() {
+            if (!isAdmin) return;
+            const dataStr = JSON.stringify(players, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `rpg_students_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("📦 數據備份成功！");
+        }
+
+        function triggerImportFileInput() { if (isAdmin) document.getElementById("importFileInput").click(); }
+        function importDataJSON(event) {
+            if (!isAdmin) return;
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData) && importedData.length > 0) {
+                        if (confirm(`📥 確定匯入數據並覆蓋（共 ${importedData.length} 筆資料）？`)) {
+                            players = importedData;
+                            currentId = players[0].id;
+                            saveData(); renderTabs(); renderCharacter();
+                            alert("🎉 數據匯入成功！");
+                        }
+                    } else alert("⚠️ 檔案格式不符合學生 RPG 資料結構。");
+                } catch (err) { alert("❌ 讀取失敗，請確認是否為有效 JSON！"); }
+                event.target.value = "";
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllDataPrompt() {
+            if (!isAdmin) return;
+            if (confirm("⚠️ 警告：確定要清空所有學生資料？")) {
+                if (prompt("🚨 輸入「DELETE」以確認刪除：") === "DELETE") {
+                    localStorage.removeItem("rpg_students_v8_data");
+                    players = [];
+                    createNewCharacterData("小明", "boy");
+                    currentId = players[0].id;
+                    renderTabs(); renderCharacter();
+                    alert("🗑️ 所有數據已重置！");
+                }
+            }
+        }
+
+        function changeTeacherPasswordPrompt() {
+            if (!isAdmin) return;
+            if (prompt("請輸入舊密碼：") !== teacherPassword) { alert("舊密碼不正確！"); return; }
+            const newPwd = prompt("請輸入新密碼：");
+            if (newPwd && newPwd.trim() !== "") {
+                teacherPassword = newPwd.trim();
+                localStorage.setItem("rpg_teacher_pwd", teacherPassword);
+                alert("🎉 密碼修改成功！");
+            }
+        }
+
+        function createNewCharacterPrompt() {
+            if (!isAdmin) return;
+            const name = prompt("請輸入新角色名稱：", "新學生");
+            if (!name || name.trim() === "") return;
+            const genderChoice = prompt("選擇性別風格：\n1. 👦 男性\n2. 👧 女性", "1");
+            currentId = createNewCharacterData(name.trim(), genderChoice === "2" ? "girl" : "boy");
+            renderTabs(); renderCharacter();
+        }
+
+        function createNewCharacterData(defaultName, gender = "boy") {
+            const newId = (players.length + 1).toString().padStart(2, '0');
+            const newChar = {
+                id: newId, name: defaultName || `冒險者 ${newId}`, gender: gender,
+                gold: 0, level: 1, exp: 0, maxHp: 100, hp: 100, maxMp: 50, mp: 50,
+                pets: [], equippedPet: null, clearedBosses: [],
+                stats: { morality: { pts: 0, lvl: 0 }, wisdom: { pts: 0, lvl: 0 }, strength: { pts: 0, lvl: 0 }, charm: { pts: 0, lvl: 0 }, spirit: { pts: 0, lvl: 0 } }
+            };
+            players.push(newChar); saveData(); return newId;
+        }
+
+        function renderTabs() {
+            const container = document.getElementById("characterTabs");
+            container.innerHTML = "";
+            players.forEach(p => {
+                const btn = document.createElement("button");
+                btn.className = `tab-btn ${p.id === currentId ? 'active' : ''}`;
+                btn.innerText = `${p.name} (ID:${p.id})`;
+                btn.onclick = () => { currentId = p.id; renderTabs(); renderCharacter(); };
+                container.appendChild(btn);
+            });
+        }
+
+        function getCurrentPlayer() { return players.find(p => p.id === currentId); }
+
+        function addExp(amount) {
+            if (!isAdmin) return;
+            addExpInternal(getCurrentPlayer(), amount);
+            saveData(); renderCharacter();
+        }
+
+        function addExpInternal(player, amount) {
+            player.exp += amount;
+            while (player.exp >= 100) {
+                player.exp -= 100;
+                player.level += 1;
+                const strLvl = Math.min(5, player.stats.strength.lvl);
+                const hpAdd = Math.floor(Math.random() * (strLvl + 5 - Math.max(1, strLvl) + 1)) + Math.max(1, strLvl);
+                const spiLvl = Math.min(5, player.stats.spirit.lvl);
+                const mpAdd = Math.floor(Math.random() * (spiLvl + 5 - Math.max(1, spiLvl) + 1)) + Math.max(1, spiLvl);
+                player.maxHp += hpAdd; player.hp = player.maxHp;
+                player.maxMp += mpAdd; player.mp = player.maxMp;
+            }
+        }
+
+        function addGold(amount) {
+            if (!isAdmin) return;
+            getCurrentPlayer().gold += amount;
+            saveData(); renderCharacter();
+        }
+
+        function renderCharacter() {
+            const p = getCurrentPlayer();
+            if (!p) return;
+
+            document.getElementById("mainStage").style.display = "grid";
+            document.getElementById("petSection").style.display = "block";
+            document.getElementById("charName").innerText = p.name;
+            document.getElementById("charGold").innerText = p.gold;
+            document.getElementById("charLevel").innerText = `LV. ${p.level}`;
+            document.getElementById("expTextDisplay").innerText = `${p.exp} / 100 EXP`;
+            document.getElementById("expBarFill").style.width = `${Math.min(100, p.exp)}%`;
+            document.getElementById("hpTextDisplay").innerText = `${p.hp} / ${p.maxHp}`;
+            document.getElementById("hpBarFill").style.width = `${Math.min(100, (p.hp / p.maxHp) * 100)}%`;
+            document.getElementById("mpTextDisplay").innerText = `${p.mp} / ${p.maxMp}`;
+            document.getElementById("mpBarFill").style.width = `${Math.min(100, (p.mp / p.maxMp) * 100)}%`;
+
+            const genderBadge = document.getElementById("charGenderBadge");
+            genderBadge.className = `gender-badge ${p.gender}`;
+            genderBadge.innerText = p.gender === 'girl' ? '👧 女性' : '👦 男性';
+
+            document.getElementById("adminAuthBtn").innerText = isAdmin ? "🔓 已解鎖 (上鎖)" : "🔒 導師解鎖";
+            document.getElementById("adminAuthBtn").className = isAdmin ? "btn-danger" : "btn-accent";
+            document.getElementById("adminBadge").innerHTML = isAdmin ? '<span class="admin-badge">導師權限</span>' : '';
+            document.getElementById("addCharBtn").disabled = !isAdmin;
+
+            ["exportDataBtn", "importDataBtn", "changePwdBtn", "deleteCharBtn", "clearAllDataBtn"].forEach(id => {
+                document.getElementById(id).style.display = isAdmin ? 'inline-block' : 'none';
+            });
+            document.getElementById("changeNameBtn").disabled = !isAdmin;
+            ["exp1Btn", "exp2Btn", "exp3Btn", "exp5Btn", "exp100Btn", "g1Btn", "g2Btn", "g3Btn", "g5Btn", "g10Btn", "g100Btn"].forEach(id => {
+                document.getElementById(id).disabled = !isAdmin;
+            });
+
+            const statList = document.getElementById("statList");
+            statList.innerHTML = "";
+            Object.keys(STAT_CONFIG).forEach(key => {
+                const config = STAT_CONFIG[key];
+                const stat = p.stats[key];
+                const isMax = stat.lvl >= STAGE_REQUIREMENTS.length;
+                const reqPts = isMax ? 0 : STAGE_REQUIREMENTS[stat.lvl];
+                const percent = isMax ? 100 : Math.min(100, (stat.pts / reqPts) * 100);
+
+                const card = document.createElement("div");
+                card.className = "stat-card";
+                card.innerHTML = `
+                    <div class="stat-header"><span class="stat-name">${config.icon} ${config.name} (${config.title})</span><span class="stat-level">${stat.lvl > 0 ? stat.lvl + ' 級' : '基礎級'}</span></div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #f1c40f, #e67e22);"></div></div>
+                    <div class="stat-controls">
+                        <span style="font-size: 0.8rem; color: var(--text-dim);">積點: ${stat.pts} ${isMax ? '(最高級)' : '/ ' + reqPts}</span>
+                        <div style="display:flex; gap:4px;">
+                            ${!isMax ? `<button class="btn-primary" ${!isAdmin ? 'disabled' : ''} onclick="addPoint('${key}')">+1 點</button>` : ''}
+                            ${(!isMax && stat.pts >= reqPts) ? `<button class="btn-success" ${!isAdmin ? 'disabled' : ''} onclick="upgradeStat('${key}')">升級裝備</button>` : ''}
+                            ${isAdmin ? `<button class="btn-danger" onclick="adminEditStat('${key}')">改</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                statList.appendChild(card);
+            });
+
+            renderEquipSlots(p);
+            renderAvatarToContainer("mainAvatarContainer", p);
+            renderPetStore(p);
+        }
+
+        /* 渲染裝備欄，包含寵物裝備狀況 */
+        function renderEquipSlots(p) {
+            const slots = [
+                { key: 'wisdom', icon: '👑', name: '頭飾', list: EQUIP_NAMES.head },
+                { key: 'strength', icon: '🛡️', name: '盔甲', list: EQUIP_NAMES.body },
+                { key: 'charm', icon: '🧤', name: '護手', list: EQUIP_NAMES.hand },
+                { key: 'morality', icon: '👞', name: '戰靴', list: EQUIP_NAMES.feet },
+                { key: 'spirit', icon: '⚔️', name: '武器', list: EQUIP_NAMES.weapon }
+            ];
+            
+            const container = document.getElementById("equipSlotsGrid");
+            container.innerHTML = "";
+            
+            // 繪製前5種標準屬性裝備
+            slots.forEach(s => {
+                const lvl = Math.min(4, p.stats[s.key].lvl);
+                const item = document.createElement("div");
+                item.className = "equip-slot-item";
+                item.innerHTML = `<div class="equip-slot-icon">${s.icon}</div><div><div class="equip-slot-title">${s.name}</div><div class="equip-slot-name">${s.list[lvl]}</div></div>`;
+                container.appendChild(item);
+            });
+
+            // 第 6 欄：寵物夥伴外觀欄位
+            const currentPet = PET_LIST.find(pt => pt.id === p.equippedPet);
+            const petItem = document.createElement("div");
+            petItem.className = "equip-slot-item";
+            petItem.style.borderColor = "var(--gold)";
+            petItem.innerHTML = `
+                <div class="equip-slot-icon">${currentPet ? currentPet.icon : '🐾'}</div>
+                <div>
+                    <div class="equip-slot-title">寵物夥伴</div>
+                    <div class="equip-slot-name" style="color:var(--gold);">${currentPet ? currentPet.name : '未選擇跟隨'}</div>
+                </div>
+            `;
+            container.appendChild(petItem);
+        }
+
+        function renderPetStore(p) {
+            const grid = document.getElementById("petGrid");
+            grid.innerHTML = "";
+            if (!p.pets) p.pets = [];
+
+            PET_LIST.forEach(pet => {
+                const isOwned = p.pets.includes(pet.id);
+                const isEquipped = p.equippedPet === pet.id;
+                const card = document.createElement("div");
+                card.className = `pet-card ${isEquipped ? 'active' : ''}`;
+                
+                let btnHtml = isOwned 
+                    ? (isEquipped ? `<button class="btn-danger" onclick="unequipPet()">取消跟隨</button>` : `<button class="btn-success" onclick="equipPet('${pet.id}')">選擇跟隨</button>`)
+                    : `<button class="btn-gold" onclick="buyPet('${pet.id}')">購買 (500金)</button>`;
+
+                card.innerHTML = `<div class="pet-info"><div class="pet-avatar-icon">${pet.icon}</div><div><div style="font-weight:bold; font-size:1.1rem; color:var(--primary);">${pet.name}</div><div style="font-size:0.8rem; color:var(--gold);">${isOwned ? '已擁有' : '💰 500 金幣'}</div></div></div><div>${btnHtml}</div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function buyPet(petId) {
+            const p = getCurrentPlayer();
+            const pet = PET_LIST.find(pt => pt.id === petId);
+            if (p.gold < pet.price) { alert(`💰 金幣不足！購買【${pet.name}】需要 ${pet.price} 金幣。`); return; }
+            p.gold -= pet.price;
+            if (!p.pets) p.pets = [];
+            p.pets.push(petId);
+            p.equippedPet = petId;
+            alert(`🎉 成功購買【${pet.name}】！已自動更新在「冒險者裝備與外觀」並跟隨在角色右側。`);
+            saveData(); renderCharacter();
+        }
+
+        function equipPet(petId) { getCurrentPlayer().equippedPet = petId; saveData(); renderCharacter(); }
+        function unequipPet() { getCurrentPlayer().equippedPet = null; saveData(); renderCharacter(); }
+
+        function addPoint(statKey) { if (isAdmin) { getCurrentPlayer().stats[statKey].pts += 1; saveData(); renderCharacter(); } }
+        function upgradeStat(statKey) {
+            if (!isAdmin) return;
+            const p = getCurrentPlayer();
+            const stat = p.stats[statKey];
+            if (stat.lvl < STAGE_REQUIREMENTS.length && stat.pts >= STAGE_REQUIREMENTS[stat.lvl]) {
+                stat.pts = 0; stat.lvl += 1;
+                alert(`🎉 恭喜！【${STAT_CONFIG[statKey].name}】升到了第 ${stat.lvl} 級！`);
+                saveData(); renderCharacter();
+            }
+        }
+
+        function changeNamePrompt() {
+            if (!isAdmin) return;
+            const p = getCurrentPlayer();
+            if (p.gold < 100) { alert("金幣不足！需要 100 金幣。"); return; }
+            const newName = prompt("請輸入新名稱：", p.name);
+            if (newName && newName.trim() !== "") {
+                p.gold -= 100; p.name = newName.trim();
+                saveData(); renderTabs(); renderCharacter();
+            }
+        }
+
+        function adminDeleteCurrentCharacter() {
+            if (!isAdmin) return;
+            const p = getCurrentPlayer();
+            if (confirm(`⚠️ 確定要刪除角色 [${p.name} (ID:${p.id})] 嗎？`)) {
+                players = players.filter(item => item.id !== p.id);
+                if (players.length === 0) createNewCharacterData("小明", "boy");
+                currentId = players[0].id;
+                saveData(); renderTabs(); renderCharacter();
+            }
+        }
+
+        function adminEditStat(statKey) {
+            if (!isAdmin) return;
+            const p = getCurrentPlayer();
+            const stat = p.stats[statKey];
+            const newPts = prompt(`[導師] 修改 ${STAT_CONFIG[statKey].name} 點數：`, stat.pts);
+            const newLvl = prompt(`[導師] 修改 ${STAT_CONFIG[statKey].name} 等級 (0~5)：`, stat.lvl);
+            if (newPts !== null && !isNaN(parseInt(newPts))) stat.pts = parseInt(newPts, 10);
+            if (newLvl !== null && !isNaN(parseInt(newLvl))) stat.lvl = Math.min(5, Math.max(0, parseInt(newLvl, 10)));
+            saveData(); renderCharacter();
+        }
+
+        /* --- 角色 Avatar 繪製引擎 --- */
+        function renderAvatarToContainer(containerId, player) {
+            const isMainStage = containerId === "mainAvatarContainer";
+            if (isMainStage) {
+                drawLayeredAvatar(player);
+            } else {
+                const container = document.getElementById(containerId);
+                container.innerHTML = generateAvatarSvgString(player);
+            }
+        }
+
+        function drawLayeredAvatar(player) {
+            const isGirl = player.gender === 'girl';
+            const lvlH = Math.min(4, player.stats.wisdom.lvl);
+            const lvlB = Math.min(4, player.stats.strength.lvl);
+            const lvlF = Math.min(4, player.stats.morality.lvl);
+            const lvlC = Math.min(4, player.stats.charm.lvl);
+            const lvlW = Math.min(4, player.stats.spirit.lvl);
+
+            const skinColor = "#fce2c4";
+            const eyeColor = isGirl ? "#e17055" : "#fdcb6e";
+            
+            const girlHair = `
+                <path d="M110 90 C80 60, 70 120, 60 160 C50 200, 75 210, 85 170" fill="#a0522d"/>
+                <path d="M190 90 C220 60, 230 120, 240 160 C250 200, 225 210, 215 170" fill="#a0522d"/>
+                <path d="M100 100 Q150 40 200 100 Q150 65 100 100 Z" fill="#b85b28"/>
+                <path d="M148 65 Q160 30 175 45 Q155 55 148 65 Z" fill="#b85b28"/>
+            `;
+
+            const boyHair = `
+                <path d="M95 100 Q150 45 205 100 Q180 60 150 60 Q120 60 95 100 Z" fill="#3a3d4a"/>
+                <path d="M110 110 L100 135 L120 120 Z" fill="#2d303b"/>
+                <path d="M190 110 L200 135 L180 120 Z" fill="#2d303b"/>
+                <path d="M145 68 Q150 40 158 52 Q150 60 145 68 Z" fill="#3a3d4a"/>
+            `;
+
+            document.getElementById("layer-base").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    <rect x="142" y="150" width="16" height="25" fill="${skinColor}"/>
+                    <ellipse cx="110" cy="195" rx="9" ry="9" fill="${skinColor}"/>
+                    <ellipse cx="190" cy="195" rx="9" ry="9" fill="${skinColor}"/>
+                    
+                    <rect x="126" y="240" width="18" height="45" fill="${skinColor}" rx="7"/>
+                    <rect x="156" y="240" width="18" height="45" fill="${skinColor}" rx="7"/>
+
+                    <path d="M100 110 C90 145, 115 165, 150 165 C185 165, 210 145, 200 110 C195 85, 105 85, 100 110 Z" fill="${skinColor}"/>
+
+                    ${isGirl ? girlHair : boyHair}
+
+                    <ellipse cx="128" cy="122" rx="8" ry="12" fill="${eyeColor}"/>
+                    <ellipse cx="172" cy="122" rx="8" ry="12" fill="${eyeColor}"/>
+                    <circle cx="126" cy="117" r="3" fill="#ffffff"/>
+                    <circle cx="170" cy="117" r="3" fill="#ffffff"/>
+
+                    <ellipse cx="120" cy="133" rx="7" ry="3.5" fill="#ff7675" opacity="0.6"/>
+                    <ellipse cx="180" cy="133" rx="7" ry="3.5" fill="#ff7675" opacity="0.6"/>
+
+                    <path d="M144 140 Q150 146 156 140" stroke="#d63031" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>
+            `;
+
+            const bootColors = ["#8d6e63", "#546e7a", "#2c3e50", "#212121", "#d4af37"];
+            document.getElementById("layer-feet").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    <rect x="122" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
+                    <rect x="154" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
+                </svg>
+            `;
+
+            const bodyColor = isGirl 
+                ? ["#e84393", "#d63031", "#e17055", "#fd79a8", "#fdcb6e"]
+                : ["#3498db", "#2980b9", "#34495e", "#8e44ad", "#d35400"];
+
+            const skirtStyle = isGirl 
+                ? `<polygon points="115,200 185,200 195,235 105,235" fill="#fff" stroke="#d63031" stroke-width="2"/>` 
+                : `<rect x="120" y="200" width="60" height="35" fill="#2c3e50" rx="4"/>`;
+
+            document.getElementById("layer-body").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    ${lvlB >= 1 ? `<path d="M110 170 L80 270 L220 270 L190 170 Z" fill="${bodyColor[lvlB]}" opacity="0.85"/>` : ''}
+                    <rect x="125" y="165" width="50" height="40" rx="6" fill="${bodyColor[lvlB]}" stroke="#111" stroke-width="1.5"/>
+                    ${skirtStyle}
+                </svg>
+            `;
+
+            const handGlove = lvlC > 0 ? "#f1c40f" : "transparent";
+            document.getElementById("layer-hand").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    <circle cx="110" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
+                    <circle cx="190" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
+                </svg>
+            `;
+
+            const headEquip = [
+                '',
+                `<path d="M90 95 Q80 60 70 80 Q90 85 100 100 Z" fill="#333"/><path d="M210 95 Q220 60 230 80 Q210 85 200 100 Z" fill="#333"/>`,
+                `<path d="M95 85 L80 60 L105 75 Z" fill="#fff" stroke="#e74c3c"/><path d="M205 85 L220 60 L195 75 Z" fill="#fff" stroke="#e74c3c"/>`,
+                `<circle cx="190" cy="85" r="10" fill="#e74c3c"/><path d="M185 85 L205 70 L205 100 Z" fill="#f1c40f"/>`,
+                `<polygon points="150,45 165,75 135,75" fill="#f1c40f" stroke="#fff" stroke-width="2"/>`
+            ];
+
+            document.getElementById("layer-head").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    ${headEquip[lvlH]}
+                </svg>
+            `;
+
+            const weapons = [
+                `<line x1="195" y1="195" x2="235" y2="145" stroke="#8d6e63" stroke-width="6" stroke-linecap="round"/>`,
+                `<path d="M195 195 L245 115 L252 120 L202 200 Z" fill="#bdc3c7" stroke="#2c3e50"/>`,
+                `<path d="M195 195 L250 110 L255 115 L200 200 Z" fill="#00cec9"/>`,
+                `<path d="M195 195 L240 105" stroke="#8d6e63" stroke-width="5"/><rect x="230" y="95" width="20" height="25" fill="#e74c3c" rx="3"/>`,
+                `<path d="M195 195 L255 90" stroke="#f1c40f" stroke-width="7"/><circle cx="255" cy="90" r="14" fill="#9b59b6" stroke="#f1c40f" stroke-width="3"/>`
+            ];
+
+            document.getElementById("layer-weapon").innerHTML = `
+                <svg width="320" height="350" viewBox="0 0 320 380">
+                    ${weapons[lvlW]}
+                </svg>
+            `;
+
+            document.getElementById("layer-pet").innerHTML = getPetSvgMarkup(player.equippedPet);
+        }
+
+        function generateAvatarSvgString(player) {
+            const isGirl = player.gender === 'girl';
+            const lvlH = Math.min(4, player.stats.wisdom.lvl);
+            const lvlB = Math.min(4, player.stats.strength.lvl);
+            const lvlF = Math.min(4, player.stats.morality.lvl);
+            const lvlC = Math.min(4, player.stats.charm.lvl);
+            const lvlW = Math.min(4, player.stats.spirit.lvl);
+
+            const skinColor = "#fce2c4";
+            const eyeColor = isGirl ? "#e17055" : "#fdcb6e";
+
+            const girlHair = `
+                <path d="M110 90 C80 60, 70 120, 60 160 C50 200, 75 210, 85 170" fill="#a0522d"/>
+                <path d="M190 90 C220 60, 230 120, 240 160 C250 200, 225 210, 215 170" fill="#a0522d"/>
+                <path d="M100 100 Q150 40 200 100 Q150 65 100 100 Z" fill="#b85b28"/>
+                <path d="M148 65 Q160 30 175 45 Q155 55 148 65 Z" fill="#b85b28"/>
+            `;
+
+            const boyHair = `
+                <path d="M95 100 Q150 45 205 100 Q180 60 150 60 Q120 60 95 100 Z" fill="#3a3d4a"/>
+                <path d="M110 110 L100 135 L120 120 Z" fill="#2d303b"/>
+                <path d="M190 110 L200 135 L180 120 Z" fill="#2d303b"/>
+                <path d="M145 68 Q150 40 158 52 Q150 60 145 68 Z" fill="#3a3d4a"/>
+            `;
+
+            const bootColors = ["#8d6e63", "#546e7a", "#2c3e50", "#212121", "#d4af37"];
+            const bodyColor = isGirl 
+                ? ["#e84393", "#d63031", "#e17055", "#fd79a8", "#fdcb6e"]
+                : ["#3498db", "#2980b9", "#34495e", "#8e44ad", "#d35400"];
+
+            const skirtStyle = isGirl 
+                ? `<polygon points="115,200 185,200 195,235 105,235" fill="#fff" stroke="#d63031" stroke-width="2"/>` 
+                : `<rect x="120" y="200" width="60" height="35" fill="#2c3e50" rx="4"/>`;
+
+            const handGlove = lvlC > 0 ? "#f1c40f" : "transparent";
+
+            const headEquip = [
+                '',
+                `<path d="M90 95 Q80 60 70 80 Q90 85 100 100 Z" fill="#333"/><path d="M210 95 Q220 60 230 80 Q210 85 200 100 Z" fill="#333"/>`,
+                `<path d="M95 85 L80 60 L105 75 Z" fill="#fff" stroke="#e74c3c"/><path d="M205 85 L220 60 L195 75 Z" fill="#fff" stroke="#e74c3c"/>`,
+                `<circle cx="190" cy="85" r="10" fill="#e74c3c"/><path d="M185 85 L205 70 L205 100 Z" fill="#f1c40f"/>`,
+                `<polygon points="150,45 165,75 135,75" fill="#f1c40f" stroke="#fff" stroke-width="2"/>`
+            ];
+
+            const weapons = [
+                `<line x1="195" y1="195" x2="235" y2="145" stroke="#8d6e63" stroke-width="6" stroke-linecap="round"/>`,
+                `<path d="M195 195 L245 115 L252 120 L202 200 Z" fill="#bdc3c7" stroke="#2c3e50"/>`,
+                `<path d="M195 195 L250 110 L255 115 L200 200 Z" fill="#00cec9"/>`,
+                `<path d="M195 195 L240 105" stroke="#8d6e63" stroke-width="5"/><rect x="230" y="95" width="20" height="25" fill="#e74c3c" rx="3"/>`,
+                `<path d="M195 195 L255 90" stroke="#f1c40f" stroke-width="7"/><circle cx="255" cy="90" r="14" fill="#9b59b6" stroke="#f1c40f" stroke-width="3"/>`
+            ];
+
+            const petMarkup = getPetSvgMarkup(player.equippedPet);
+
+            return `
+                <svg width="100%" height="100%" viewBox="0 0 320 380">
+                    <!-- Base Layer -->
+                    <rect x="142" y="150" width="16" height="25" fill="${skinColor}"/>
+                    <ellipse cx="110" cy="195" rx="9" ry="9" fill="${skinColor}"/>
+                    <ellipse cx="190" cy="195" rx="9" ry="9" fill="${skinColor}"/>
+                    <rect x="126" y="240" width="18" height="45" fill="${skinColor}" rx="7"/>
+                    <rect x="156" y="240" width="18" height="45" fill="${skinColor}" rx="7"/>
+                    <path d="M100 110 C90 145, 115 165, 150 165 C185 165, 210 145, 200 110 C195 85, 105 85, 100 110 Z" fill="${skinColor}"/>
+                    ${isGirl ? girlHair : boyHair}
+                    <ellipse cx="128" cy="122" rx="8" ry="12" fill="${eyeColor}"/>
+                    <ellipse cx="172" cy="122" rx="8" ry="12" fill="${eyeColor}"/>
+                    <circle cx="126" cy="117" r="3" fill="#ffffff"/>
+                    <circle cx="170" cy="117" r="3" fill="#ffffff"/>
+                    <ellipse cx="120" cy="133" rx="7" ry="3.5" fill="#ff7675" opacity="0.6"/>
+                    <ellipse cx="180" cy="133" rx="7" ry="3.5" fill="#ff7675" opacity="0.6"/>
+                    <path d="M144 140 Q150 146 156 140" stroke="#d63031" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+                    <!-- Feet Layer -->
+                    <rect x="122" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
+                    <rect x="154" y="260" width="24" height="35" rx="6" fill="${bootColors[lvlF]}" stroke="#111" stroke-width="1.5"/>
+
+                    <!-- Body Layer -->
+                    ${lvlB >= 1 ? `<path d="M110 170 L80 270 L220 270 L190 170 Z" fill="${bodyColor[lvlB]}" opacity="0.85"/>` : ''}
+                    <rect x="125" y="165" width="50" height="40" rx="6" fill="${bodyColor[lvlB]}" stroke="#111" stroke-width="1.5"/>
+                    ${skirtStyle}
+
+                    <!-- Hand Layer -->
+                    <circle cx="110" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
+                    <circle cx="190" cy="195" r="11" fill="${handGlove}" stroke="#333" stroke-width="1"/>
+
+                    <!-- Head Layer -->
+                    ${headEquip[lvlH]}
+
+                    <!-- Weapon Layer -->
+                    ${weapons[lvlW]}
+
+                    <!-- Pet Layer (跟隨在右側) -->
+                    ${petMarkup}
+                </svg>
+            `;
+        }
+
+        /* 寵物圖層渲染 (精準定位於人物右側) */
+        function getPetSvgMarkup(petId) {
+            if (!petId) return "";
+            let svgContent = "";
+            switch (petId) {
+                case "dog":
+                    svgContent = `
+                        <g transform="translate(225, 200) scale(1.6)">
+                            <ellipse cx="25" cy="30" rx="18" ry="14" fill="#e67e22"/>
+                            <circle cx="18" cy="18" r="14" fill="#f39c12"/>
+                            <ellipse cx="8" cy="14" rx="4" ry="9" fill="#d35400"/>
+                            <ellipse cx="28" cy="14" rx="4" ry="9" fill="#d35400"/>
+                            <circle cx="14" cy="16" r="2" fill="#000"/>
+                            <circle cx="22" cy="16" r="2" fill="#000"/>
+                            <ellipse cx="18" cy="21" rx="3" ry="2" fill="#000"/>
+                            <path d="M38 26 Q45 20 42 12" stroke="#e67e22" stroke-width="3" fill="none"/>
+                        </g>`;
+                    break;
+                case "cat":
+                    svgContent = `
+                        <g transform="translate(225, 205) scale(1.6)">
+                            <ellipse cx="22" cy="28" rx="15" ry="12" fill="#bdc3c7"/>
+                            <circle cx="22" cy="16" r="12" fill="#ecf0f1"/>
+                            <polygon points="12,8 16,0 20,8" fill="#e74c3c"/>
+                            <polygon points="24,8 28,0 32,8" fill="#e74c3c"/>
+                            <circle cx="18" cy="15" r="2" fill="#2c3e50"/>
+                            <circle cx="26" cy="15" r="2" fill="#2c3e50"/>
+                            <polygon points="22,18 20,20 24,20" fill="#ff7675"/>
+                        </g>`;
+                    break;
+                case "butterfly":
+                    svgContent = `
+                        <g transform="translate(220, 120) scale(1.6)">
+                            <ellipse cx="20" cy="10" rx="16" ry="10" fill="#9b59b6" opacity="0.85"/>
+                            <ellipse cx="20" cy="28" rx="12" ry="8" fill="#e84393" opacity="0.85"/>
+                            <line x1="20" y1="0" x2="20" y2="36" stroke="#2c3e50" stroke-width="3"/>
+                            <circle cx="14" cy="8" r="3" fill="#fff"/>
+                            <circle cx="26" cy="8" r="3" fill="#fff"/>
+                        </g>`;
+                    break;
+                case "rabbit":
+                    svgContent = `
+                        <g transform="translate(225, 195) scale(1.6)">
+                            <ellipse cx="20" cy="32" rx="14" ry="12" fill="#ffffff" stroke="#ccc" stroke-width="1"/>
+                            <circle cx="20" cy="20" r="10" fill="#ffffff" stroke="#ccc" stroke-width="1"/>
+                            <ellipse cx="16" cy="6" rx="3" ry="10" fill="#ff7675"/>
+                            <ellipse cx="24" cy="6" rx="3" ry="10" fill="#ff7675"/>
+                            <circle cx="17" cy="19" r="1.5" fill="#000"/>
+                            <circle cx="23" cy="19" r="1.5" fill="#000"/>
+                        </g>`;
+                    break;
+                case "lion":
+                    svgContent = `
+                        <g transform="translate(215, 190) scale(1.6)">
+                            <circle cx="22" cy="20" r="18" fill="#d35400"/>
+                            <circle cx="22" cy="20" r="12" fill="#f1c40f"/>
+                            <rect x="12" y="28" width="20" height="18" fill="#f39c12" rx="4"/>
+                            <circle cx="18" cy="18" r="2" fill="#000"/>
+                            <circle cx="26" cy="18" r="2" fill="#000"/>
+                            <polygon points="22,21 20,24 24,24" fill="#000"/>
+                        </g>`;
+                    break;
+                case "tiger":
+                    svgContent = `
+                        <g transform="translate(215, 195) scale(1.6)">
+                            <rect x="10" y="24" width="24" height="18" fill="#e67e22" rx="5"/>
+                            <circle cx="22" cy="16" r="13" fill="#e67e22"/>
+                            <line x1="16" y1="8" x2="28" y2="8" stroke="#000" stroke-width="2"/>
+                            <line x1="18" y1="11" x2="26" y2="11" stroke="#000" stroke-width="2"/>
+                            <circle cx="17" cy="15" r="2" fill="#000"/>
+                            <circle cx="27" cy="15" r="2" fill="#000"/>
+                        </g>`;
+                    break;
+                case "eagle":
+                    svgContent = `
+                        <g transform="translate(225, 140) scale(1.6)">
+                            <path d="M10 20 Q20 5 30 20 L25 35 L15 35 Z" fill="#7f8c8d"/>
+                            <circle cx="20" cy="14" r="8" fill="#fff"/>
+                            <polygon points="20,15 28,17 20,20" fill="#f1c40f"/>
+                            <circle cx="18" cy="13" r="1.5" fill="#000"/>
+                        </g>`;
+                    break;
+                case "bear":
+                    svgContent = `
+                        <g transform="translate(215, 180) scale(1.6)">
+                            <rect x="8" y="24" width="28" height="22" fill="#5d4037" rx="6"/>
+                            <circle cx="22" cy="16" r="14" fill="#6d4c41"/>
+                            <circle cx="12" cy="6" r="4" fill="#5d4037"/>
+                            <circle cx="32" cy="6" r="4" fill="#5d4037"/>
+                            <ellipse cx="22" cy="19" rx="6" ry="4" fill="#d7ccc8"/>
+                            <circle cx="17" cy="14" r="2" fill="#000"/>
+                            <circle cx="27" cy="14" r="2" fill="#000"/>
+                        </g>`;
+                    break;
+            }
+            return `<g id="pet-sublayer">${svgContent}</g>`;
+        }
+    </script>
+</body>
+</html>
