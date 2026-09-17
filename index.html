@@ -169,6 +169,7 @@
                     <button class="btn-exp" id="exp2Btn" disabled>+2</button>
                     <button class="btn-exp" id="exp3Btn" disabled>+3</button>
                     <button class="btn-exp" id="exp5Btn" disabled>+5</button>
+                    <button class="btn-exp" id="exp10Btn" disabled>+10</button>
                     <button class="btn-exp" id="exp100Btn" disabled>+100</button>
                 </div>
             </div>
@@ -418,6 +419,7 @@
             document.getElementById("exp2Btn").onclick = () => addExp(2);
             document.getElementById("exp3Btn").onclick = () => addExp(3);
             document.getElementById("exp5Btn").onclick = () => addExp(5);
+            document.getElementById("exp10Btn").onclick = () => addExp(10);
             document.getElementById("exp100Btn").onclick = () => addExp(100);
 
             document.getElementById("g1Btn").onclick = () => addGold(1);
@@ -1013,7 +1015,7 @@
                 document.getElementById(id).style.display = isAdmin ? 'inline-block' : 'none';
             });
             document.getElementById("changeNameBtn").disabled = !isAdmin;
-            ["exp1Btn", "exp2Btn", "exp3Btn", "exp5Btn", "exp100Btn", "g1Btn", "g2Btn", "g3Btn", "g5Btn", "g10Btn", "g100Btn"].forEach(id => {
+            ["exp1Btn", "exp2Btn", "exp3Btn", "exp5Btn", "exp10Btn", "exp100Btn", "g1Btn", "g2Btn", "g3Btn", "g5Btn", "g10Btn", "g100Btn"].forEach(id => {
                 document.getElementById(id).disabled = !isAdmin;
             });
 
