@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>學生 RPG 冒險者養成系統 v13.0 (系統功能擴充版)</title>
+    <title>學生 RPG 冒險者養成系統 v13.1 (ID 防重複修復版)</title>
     <style>
         :root {
             --bg-main: #12141d;
@@ -208,7 +208,7 @@
                 </div>
             </div>
 
-            <!-- 新增：藥水小商店區塊 -->
+            <!-- 藥水小商店區塊 -->
             <div class="status-box" style="margin-top: 5px;">
                 <div class="status-header" style="color:var(--gold); font-size:1rem; border-bottom:1px solid #282b3d; padding-bottom:4px;">
                     🛒 冒險補給小商店
@@ -407,7 +407,6 @@
             weapon: ["練習木棍", "守護者長劍", "精靈雙刃短劍", "巫術神聖祭符", "光輝聖典神器"]
         };
 
-        // 寵物清單：調整價格與新增技能名稱及傷害值
         const PET_LIST = [
             { id: "dog", name: "調皮的小狗", icon: "🐶", price: 500, skillName: "旺旺叫 攻擊", atk: 2 },
             { id: "cat", name: "可愛的小貓", icon: "🐱", price: 500, skillName: "喵喵抓 攻擊", atk: 2 },
@@ -480,14 +479,12 @@
                     currentId = players[0].id;
                 }
 
-                // 檢查並進行時間自然恢復 (血量每半小時+2，魔力每半小時+1)
                 checkAutoRecoveryAll();
 
                 renderTabs();
                 renderCharacter();
             });
 
-            // 每 10 秒觸發一次定時檢查恢復
             setInterval(() => {
                 if (players.length > 0) {
                     checkAutoRecoveryAll();
@@ -499,7 +496,7 @@
             set(dbRef, players);
         }
 
-        /* --- 自然恢復邏輯 (每30分鐘恢復血量2點、魔力1點) --- */
+        /* --- 自然恢復邏輯 --- */
         function checkAutoRecoveryAll() {
             const now = Date.now();
             let updated = false;
@@ -511,15 +508,13 @@
                 }
 
                 const elapsedMs = now - p.lastRecoverTime;
-                const intervals = Math.floor(elapsedMs / (30 * 60 * 1000)); // 每30分鐘為一個週期
+                const intervals = Math.floor(elapsedMs / (30 * 60 * 1000));
 
                 if (intervals > 0) {
-                    // 血量恢復：每 30 分鐘 2 點
                     if (p.hp < p.maxHp) {
                         p.hp = Math.min(p.maxHp, p.hp + intervals * 2);
                         updated = true;
                     }
-                    // 魔力恢復：每 30 分鐘 1 點
                     if (p.mp < p.maxMp) {
                         p.mp = Math.min(p.maxMp, p.mp + intervals * 1);
                         updated = true;
@@ -716,7 +711,6 @@
                     return;
                 }
 
-                // 判斷暴擊與消耗 50 MP (魔力不足 50 則不發動暴擊)
                 let isCrit = false;
                 if (playerMp >= 50) {
                     isCrit = Math.random() < (0.1 + p.stats.wisdom.lvl * 0.05);
@@ -736,7 +730,6 @@
                 let critMsg = isCrit ? '⚡ 暴擊！(消耗 50 MP)' : '';
                 addBossLog(`第 ${round} 回合：【${p.name}】攻擊${critMsg}，對魔王造成 ${pDmg} 點傷害！`, isCrit ? 'crit' : '');
 
-                // 寵物隨機攻擊系統 (40% 幾率觸發攻擊)
                 if (bossHp > 0 && equippedPetObj && Math.random() < 0.40) {
                     bossHp = Math.max(0, bossHp - equippedPetObj.atk);
                     document.getElementById("bossHpText").innerText = `${bossHp} / ${boss.hp}`;
@@ -750,7 +743,6 @@
                     return;
                 }
 
-                // 魔王攻擊
                 const isMagic = Math.random() < 0.35;
                 let bDmg = boss.atk + Math.floor(Math.random() * 8);
                 if (isMagic) bDmg += boss.magicAtk;
@@ -773,7 +765,6 @@
             document.getElementById("startBossBattleBtn").disabled = false;
             if (!player.clearedBosses) player.clearedBosses = [];
 
-            // 戰鬥後同步剩餘血量與魔力
             player.hp = Math.max(0, playerHp);
             player.mp = Math.max(0, playerMp);
 
@@ -797,7 +788,6 @@
                     alert(`🎉 成功擊敗【${boss.name}】！\n(重複挑戰不發放金幣與經驗值)`);
                 }
             } else {
-                // 挑戰失敗處理：扣金幣與經驗值，若經驗不夠扣則會降等級
                 const deductGold = Math.min(100, player.gold);
                 player.gold -= deductGold;
 
@@ -807,16 +797,15 @@
                 player.exp -= deductExp;
                 while (player.exp < 0 && player.level > 1) {
                     player.level -= 1;
-                    player.exp += 100; // 歸還上一級的經驗值繼續扣
+                    player.exp += 100;
                     levelDropped = true;
                     
-                    // 重新計算降級後的最大 HP 與 MP
                     player.maxHp = Math.max(100, player.maxHp - 10);
                     player.maxMp = Math.max(50, player.maxMp - 5);
                 }
 
                 if (player.exp < 0 && player.level === 1) {
-                    player.exp = 0; // 最低降至 LV.1 且經驗為 0
+                    player.exp = 0;
                 }
 
                 addBossLog(`💀 討伐失敗！【${player.name}】倒下了...`, "crit");
@@ -975,7 +964,6 @@
                     return;
                 }
 
-                // 左方攻擊 (判斷 MP >= 50 才發動暴擊並扣除 50 MP)
                 let lCrit = false;
                 if (leftMp >= 50) {
                     lCrit = Math.random() < (0.1 + leftPlayer.stats.wisdom.lvl * 0.05);
@@ -997,7 +985,6 @@
                     return;
                 }
 
-                // 右方攻擊
                 let rCrit = false;
                 if (rightMp >= 50) {
                     rCrit = Math.random() < (0.1 + rightPlayer.stats.wisdom.lvl * 0.05);
@@ -1107,15 +1094,45 @@
             renderTabs(); renderCharacter();
         }
 
+        // 獨立且防重複的 ID 產生邏輯
         function createNewCharacterData(defaultName, gender = "boy") {
-            const newId = (players.length + 1).toString().padStart(2, '0');
+            let maxIdNum = 0;
+            if (players && players.length > 0) {
+                players.forEach(p => {
+                    const num = parseInt(p.id, 10);
+                    if (!isNaN(num) && num > maxIdNum) {
+                        maxIdNum = num;
+                    }
+                });
+            }
+            const newId = (maxIdNum + 1).toString().padStart(2, '0');
+
             const newChar = {
-                id: newId, name: defaultName || `冒險者 ${newId}`, gender: gender,
-                gold: 0, level: 1, exp: 0, maxHp: 100, hp: 100, maxMp: 50, mp: 50,
-                pets: [], equippedPet: null, clearedBosses: [], lastRecoverTime: Date.now(),
-                stats: { morality: { pts: 0, lvl: 0 }, wisdom: { pts: 0, lvl: 0 }, strength: { pts: 0, lvl: 0 }, charm: { pts: 0, lvl: 0 }, spirit: { pts: 0, lvl: 0 } }
+                id: newId, 
+                name: defaultName || `冒險者 ${newId}`, 
+                gender: gender,
+                gold: 0, 
+                level: 1, 
+                exp: 0, 
+                maxHp: 100, 
+                hp: 100, 
+                maxMp: 50, 
+                mp: 50,
+                pets: [], 
+                equippedPet: null, 
+                clearedBosses: [], 
+                lastRecoverTime: Date.now(),
+                stats: { 
+                    morality: { pts: 0, lvl: 0 }, 
+                    wisdom: { pts: 0, lvl: 0 }, 
+                    strength: { pts: 0, lvl: 0 }, 
+                    charm: { pts: 0, lvl: 0 }, 
+                    spirit: { pts: 0, lvl: 0 } 
+                }
             };
-            players.push(newChar); saveData(); return newId;
+            players.push(newChar); 
+            saveData(); 
+            return newId;
         }
 
         function renderTabs() {
@@ -1249,7 +1266,6 @@
             renderPetStore(p);
         }
 
-        /* 渲染裝備欄，包含寵物裝備狀況 */
         function renderEquipSlots(p) {
             const slots = [
                 { key: 'wisdom', icon: '👑', name: '頭飾', list: EQUIP_NAMES.head },
